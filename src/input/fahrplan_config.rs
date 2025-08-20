@@ -22,9 +22,6 @@ pub struct FahrplanConfig {
 
     #[serde(rename = "Train", default)]
     pub trains: Vec<TrainConfig>,
-
-    #[serde(rename = "CopyDelay", default, skip_serializing_if = "Option::is_none")]
-    pub copy_delay_config: Option<CopyDelayConfig>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -41,6 +38,9 @@ pub struct TrainConfig {
 
     #[serde(rename = "RollingStock")]
     pub rolling_stock: RollingStock,
+
+    #[serde(rename = "CopyDelay", default, skip_serializing_if = "Option::is_none")]
+    pub copy_delay_config: Option<CopyDelayConfig>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -154,13 +154,13 @@ mod tests {
                     </RoutePart>
                 </Route>
                 <RollingStock path="./path/to/rolling-stock.trn"/>
+                <CopyDelay>
+                    <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
+                    <CopyDelayTask delay="02:00:00" count="3" increment="2">
+                        <RollingStock path="./path/to/rolling-stock.trn"/>
+                    </CopyDelayTask>
+                </CopyDelay>
             </Train>
-            <CopyDelay>
-                <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
-                <CopyDelayTask delay="02:00:00" count="3" increment="2">
-                    <RollingStock path="./path/to/rolling-stock.trn"/>
-                </CopyDelayTask>
-            </CopyDelay>
         </Fahrplan>
     "#;
 
@@ -190,24 +190,24 @@ mod tests {
                         ],
                     },
                     rolling_stock: RollingStock { path: "./path/to/rolling-stock.trn".into() },
+                    copy_delay_config: Some(CopyDelayConfig {
+                        tasks: vec![
+                            CopyDelayTask {
+                                delay: Duration::hours(3),
+                                count: 1,
+                                increment: 6,
+                                custom_rolling_stock: None,
+                            },
+                            CopyDelayTask {
+                                delay: Duration::hours(2),
+                                count: 3,
+                                increment: 2,
+                                custom_rolling_stock: Some(RollingStock { path: "./path/to/rolling-stock.trn".into() }),
+                            },
+                        ],
+                    }),
                 },
             ],
-            copy_delay_config: Some(CopyDelayConfig {
-                tasks: vec![
-                    CopyDelayTask {
-                        delay: Duration::hours(3),
-                        count: 1,
-                        increment: 6,
-                        custom_rolling_stock: None,
-                    },
-                    CopyDelayTask {
-                        delay: Duration::hours(2),
-                        count: 3,
-                        increment: 2,
-                        custom_rolling_stock: Some(RollingStock { path: "./path/to/rolling-stock.trn".into() }),
-                    },
-                ],
-            }),
         }
     }
 
