@@ -135,10 +135,10 @@ mod tests {
     use crate::test_utils::cleanup_xml;
     use quick_xml::{de, se};
     use time::macros::datetime;
-    use crate::input::ZusiEnvironment;
+    use crate::input::ZusiEnvironmentConfig;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
-        <Environment basePath="path/to/Zusi3User">
+        <ZusiEnvironment basePath="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
                 <Train nummer="20000" gattung="RB">
                     <Route>
@@ -160,11 +160,11 @@ mod tests {
                     </CopyDelay>
                 </Train>
             </Fahrplan>
-        </Environment>
+        </ZusiEnvironment>
     "#;
 
-    fn expected_deserialized() -> ZusiEnvironment<FahrplanConfig> {
-        ZusiEnvironment {
+    fn expected_deserialized() -> ZusiEnvironmentConfig<FahrplanConfig> {
+        ZusiEnvironmentConfig {
             base_path: "path/to/Zusi3User".into(),
             value: FahrplanConfig {
                 generate_at: "./path/to/destination.fpn".into(),
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let deserialized: ZusiEnvironment<FahrplanConfig> = de::from_str(EXPECTED_SERIALIZED).unwrap();
+        let deserialized: ZusiEnvironmentConfig<FahrplanConfig> = de::from_str(EXPECTED_SERIALIZED).unwrap();
         assert_eq!(deserialized, expected_deserialized());
     }
 }
