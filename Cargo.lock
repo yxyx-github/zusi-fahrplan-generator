@@ -592,7 +592,7 @@ dependencies = [
 
 [[package]]
 name = "zusi-xml-lib"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "quick-xml",
  "serde",
