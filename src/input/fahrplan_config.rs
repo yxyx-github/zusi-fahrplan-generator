@@ -16,10 +16,6 @@ pub struct FahrplanConfig {
     #[serde(rename = "@generateFrom")]
     pub generate_from: PathBuf,
 
-    /// Path to own data directory root
-    #[serde(rename = "@basePath")]
-    pub base_path: PathBuf,
-
     #[serde(rename = "Train", default)]
     pub trains: Vec<TrainConfig>,
 }
@@ -139,75 +135,80 @@ mod tests {
     use crate::test_utils::cleanup_xml;
     use quick_xml::{de, se};
     use time::macros::datetime;
+    use crate::input::ZusiEnvironment;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
-        <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn" basePath="path/to/Zusi3User">
-            <Train nummer="20000" gattung="RB">
-                <Route>
-                    <RoutePart overrideMetaData="true">
-                        <TrainFileByPath path="./path/to/route-part.trn"/>
-                        <TimeFix type="StartAbf" value="2023-02-01 13:50:20"/>
-                        <ApplySchedule path="./path/to/a.schedule.xml"/>
-                    </RoutePart>
-                    <RoutePart>
-                        <TrainConfigByNummer nummer="10000"/>
-                    </RoutePart>
-                </Route>
-                <RollingStock path="./path/to/rolling-stock.trn"/>
-                <CopyDelay>
-                    <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
-                    <CopyDelayTask delay="02:00:00" count="3" increment="2">
-                        <RollingStock path="./path/to/rolling-stock.trn"/>
-                    </CopyDelayTask>
-                </CopyDelay>
-            </Train>
-        </Fahrplan>
+        <Environment basePath="path/to/Zusi3User">
+            <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
+                <Train nummer="20000" gattung="RB">
+                    <Route>
+                        <RoutePart overrideMetaData="true">
+                            <TrainFileByPath path="./path/to/route-part.trn"/>
+                            <TimeFix type="StartAbf" value="2023-02-01 13:50:20"/>
+                            <ApplySchedule path="./path/to/a.schedule.xml"/>
+                        </RoutePart>
+                        <RoutePart>
+                            <TrainConfigByNummer nummer="10000"/>
+                        </RoutePart>
+                    </Route>
+                    <RollingStock path="./path/to/rolling-stock.trn"/>
+                    <CopyDelay>
+                        <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
+                        <CopyDelayTask delay="02:00:00" count="3" increment="2">
+                            <RollingStock path="./path/to/rolling-stock.trn"/>
+                        </CopyDelayTask>
+                    </CopyDelay>
+                </Train>
+            </Fahrplan>
+        </Environment>
     "#;
 
-    fn expected_deserialized() -> FahrplanConfig {
-        FahrplanConfig {
-            generate_at: "./path/to/destination.fpn".into(),
-            generate_from: "./path/to/template.fpn".into(),
+    fn expected_deserialized() -> ZusiEnvironment<FahrplanConfig> {
+        ZusiEnvironment {
             base_path: "path/to/Zusi3User".into(),
-            trains: vec![
-                TrainConfig {
-                    nummer: "20000".into(),
-                    gattung: "RB".into(),
-                    route: RouteConfig {
-                        parts: vec![
-                            RoutePart {
-                                source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
-                                override_meta_data: true,
-                                time_fix: Some(TimeFix { fix_type: TimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
-                                apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
-                            },
-                            RoutePart {
-                                source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
-                                override_meta_data: false,
-                                time_fix: None,
-                                apply_schedule: None,
-                            },
-                        ],
+            value: FahrplanConfig {
+                generate_at: "./path/to/destination.fpn".into(),
+                generate_from: "./path/to/template.fpn".into(),
+                trains: vec![
+                    TrainConfig {
+                        nummer: "20000".into(),
+                        gattung: "RB".into(),
+                        route: RouteConfig {
+                            parts: vec![
+                                RoutePart {
+                                    source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
+                                    override_meta_data: true,
+                                    time_fix: Some(TimeFix { fix_type: TimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
+                                    apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
+                                },
+                                RoutePart {
+                                    source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
+                                    override_meta_data: false,
+                                    time_fix: None,
+                                    apply_schedule: None,
+                                },
+                            ],
+                        },
+                        rolling_stock: RollingStock { path: "./path/to/rolling-stock.trn".into() },
+                        copy_delay_config: Some(CopyDelayConfig {
+                            tasks: vec![
+                                CopyDelayTask {
+                                    delay: Duration::hours(3),
+                                    count: 1,
+                                    increment: 6,
+                                    custom_rolling_stock: None,
+                                },
+                                CopyDelayTask {
+                                    delay: Duration::hours(2),
+                                    count: 3,
+                                    increment: 2,
+                                    custom_rolling_stock: Some(RollingStock { path: "./path/to/rolling-stock.trn".into() }),
+                                },
+                            ],
+                        }),
                     },
-                    rolling_stock: RollingStock { path: "./path/to/rolling-stock.trn".into() },
-                    copy_delay_config: Some(CopyDelayConfig {
-                        tasks: vec![
-                            CopyDelayTask {
-                                delay: Duration::hours(3),
-                                count: 1,
-                                increment: 6,
-                                custom_rolling_stock: None,
-                            },
-                            CopyDelayTask {
-                                delay: Duration::hours(2),
-                                count: 3,
-                                increment: 2,
-                                custom_rolling_stock: Some(RollingStock { path: "./path/to/rolling-stock.trn".into() }),
-                            },
-                        ],
-                    }),
-                },
-            ],
+                ],
+            },
         }
     }
 
@@ -219,7 +220,7 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let deserialized: FahrplanConfig = de::from_str(EXPECTED_SERIALIZED).unwrap();
+        let deserialized: ZusiEnvironment<FahrplanConfig> = de::from_str(EXPECTED_SERIALIZED).unwrap();
         assert_eq!(deserialized, expected_deserialized());
     }
 }
