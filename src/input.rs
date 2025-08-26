@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
+use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{InvalidBasePath, ZusiPath};
 
 pub mod fahrplan_config;
 
@@ -14,11 +16,45 @@ pub struct ZusiEnvironmentConfig<T> {
     pub value: T,
 }
 
-pub struct ZusiEnvironment {
-    pub base_path: PathBuf,
+impl<T> ZusiEnvironmentConfig<T> {
+    pub fn into_zusi_environment(self, config_path: PathBuf) -> (ZusiEnvironment, T) {
+        ZusiEnvironment::from_zusi_environment_config(self, config_path)
+    }
 }
 
-impl<T> From<ZusiEnvironmentConfig<T>> for (ZusiEnvironment, T) {
+pub struct ZusiEnvironment {
+    /// Path to own data directory root
+    pub base_path: PathBuf,
+
+    /// Path to configuration file used as input
+    pub config_path: PathBuf,
+}
+
+impl ZusiEnvironment {
+    pub fn from_zusi_environment_config<T>(config: ZusiEnvironmentConfig<T>, config_path: PathBuf) -> (ZusiEnvironment, T) {
+        (
+            ZusiEnvironment {
+                base_path: config.base_path,
+                config_path,
+            },
+            config.value,
+        )
+    }
+    
+    pub fn path_to_prejoined_zusi_path<P: AsRef<Path> + Into<PathBuf>>(&self, path: P) -> Result<PrejoinedZusiPath, InvalidBasePath> {
+        Ok(
+            if path.as_ref().is_absolute() {
+                PrejoinedZusiPath::new(&self.base_path, ZusiPath::new(path))
+            } else {
+                let root_path = self.config_path.join(&path);
+                let zusi_path = ZusiPath::new_using_base(root_path, &self.base_path)?;
+                PrejoinedZusiPath::new(&self.base_path, zusi_path)
+            }
+        )
+    }
+}
+
+/*impl<T> From<ZusiEnvironmentConfig<T>> for (ZusiEnvironment, T) {
     fn from(value: ZusiEnvironmentConfig<T>) -> Self {
         (
             ZusiEnvironment {
@@ -27,7 +63,7 @@ impl<T> From<ZusiEnvironmentConfig<T>> for (ZusiEnvironment, T) {
             value.value,
         )
     }
-}
+}*/
 
 #[cfg(test)]
 mod tests {

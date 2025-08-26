@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::{ReadZusiXMLFileError, WriteZusiXMLFileError};
+use zusi_xml_lib::xml::zusi::lib::path::zusi_path::InvalidBasePath;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
     ReadFileError {
         path: PathBuf,
@@ -16,6 +17,16 @@ pub enum GenerateFahrplanError {
         path: PathBuf,
         expected: DateiTyp,
     },
+    InvalidPath {
+        path: PathBuf,
+        cause: InvalidPathCause,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InvalidPathCause {
+    ConversionToStringFailed,
+    InvalidBasePath,
 }
 
 impl<P: Into<PathBuf>> From<(P, ReadZusiXMLFileError)> for GenerateFahrplanError {
@@ -44,6 +55,15 @@ impl<P: Into<PathBuf>> From<(P, WriteZusiXMLFileError)> for GenerateFahrplanErro
                 path: path.into(),
                 error: error.to_string(),
             },
+        }
+    }
+}
+
+impl<P: Into<PathBuf>> From<(P, InvalidBasePath)> for GenerateFahrplanError {
+    fn from((path, _): (P, InvalidBasePath)) -> Self {
+        GenerateFahrplanError::InvalidPath {
+            path: path.into(),
+            cause: InvalidPathCause::InvalidBasePath,
         }
     }
 }
