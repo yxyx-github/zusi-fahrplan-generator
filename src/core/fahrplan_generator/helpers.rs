@@ -4,9 +4,9 @@ use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
+use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi, ZusiValue};
-use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 
 pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Fahrplan>, GenerateFahrplanError> {
     match Zusi::from_xml_file_by_path(path.as_ref()) {
@@ -16,6 +16,19 @@ pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZus
         Ok(_) => Err(GenerateFahrplanError::FileTypeError {
             path: path.into(),
             expected: DateiTyp::Fahrplan,
+        }),
+        Err(error) => Err((path, error).into()),
+    }
+}
+
+pub fn read_zug<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Zug>, GenerateFahrplanError> {
+    match Zusi::from_xml_file_by_path(path.as_ref()) {
+        Ok(zusi @ Zusi { value: ZusiValue::Zug(_), .. }) => {
+            Ok(zusi.try_into().unwrap())
+        }
+        Ok(_) => Err(GenerateFahrplanError::FileTypeError {
+            path: path.into(),
+            expected: DateiTyp::Zug,
         }),
         Err(error) => Err((path, error).into()),
     }
