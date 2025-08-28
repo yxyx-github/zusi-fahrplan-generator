@@ -5,7 +5,7 @@ use std::ops::Not;
 use std::path::PathBuf;
 use time::{Duration, PrimitiveDateTime};
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
 pub struct FahrplanConfig {
     /// Path where to place the generated .fpn file
@@ -20,7 +20,7 @@ pub struct FahrplanConfig {
     pub trains: Vec<TrainConfig>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TrainConfig {
     #[serde(rename = "@nummer")]
@@ -39,21 +39,21 @@ pub struct TrainConfig {
     pub copy_delay_config: Option<CopyDelayConfig>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RouteConfig {
     #[serde(rename = "$value")]
     pub parts: Vec<RoutePart>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RoutePart {
     #[serde(rename = "$value")]
     pub source: RoutePartSource,
 
     #[serde(rename = "@overrideMetaData", default, skip_serializing_if = "<&bool>::not")]
-    pub override_meta_data: bool,
+    pub override_meta_data: bool, // TODO: remove, instead add meta data source to TrainConfig directly
 
     #[serde(rename = "TimeFix", default, skip_serializing_if = "Option::is_none")]
     pub time_fix: Option<TimeFix>,
@@ -62,7 +62,7 @@ pub struct RoutePart {
     pub apply_schedule: Option<ApplySchedule>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub enum RoutePartSource {
     TrainFileByPath {
@@ -75,14 +75,14 @@ pub enum RoutePartSource {
     },
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RollingStock {
     #[serde(rename = "@path")]
     pub path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TimeFix {
     #[serde(rename = "@type")]
@@ -92,28 +92,28 @@ pub struct TimeFix {
     pub value: PrimitiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub enum TimeFixType {
     StartAbf,
     EndAnk,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ApplySchedule {
     #[serde(rename = "@path")]
     pub path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CopyDelayConfig {
     #[serde(rename = "CopyDelayTask")]
     pub tasks: Vec<CopyDelayTask>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CopyDelayTask {
     #[serde(rename = "@delay", with = "duration_format")]

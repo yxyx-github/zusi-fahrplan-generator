@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::{ReadZusiXMLFileError, WriteZusiXMLFileError};
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::InvalidBasePath;
+use crate::input::fahrplan_config::RoutePartSource;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
@@ -20,7 +21,13 @@ pub enum GenerateFahrplanError {
     InvalidPath {
         path: PathBuf,
         cause: InvalidPathCause,
-    }
+    },
+    NoRouteParts {
+        zug_nummer: String,
+    },
+    EmptyRoutePart {
+        source: RoutePartSource,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

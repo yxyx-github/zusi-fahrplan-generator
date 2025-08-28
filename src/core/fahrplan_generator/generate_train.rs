@@ -1,4 +1,7 @@
+mod generate_route;
+
 use crate::core::fahrplan_generator::error::GenerateFahrplanError;
+use crate::core::fahrplan_generator::generate_train::generate_route::generate_route;
 use crate::core::fahrplan_generator::helpers::{datei_from_zusi_path, read_zug};
 use crate::input::fahrplan_config::TrainConfig;
 use crate::input::ZusiEnvironment;
@@ -13,15 +16,17 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, tr
     let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&train_config.rolling_stock.path).map_err(|error| (&train_config.rolling_stock.path, error))?;
     let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())?;
 
+    let route = generate_route(env, train_config.route, &train_config.nummer)?;
+
     let zug = Zug::builder()
         .gattung(train_config.gattung)
         .nummer(train_config.nummer)
         .fahrplan_datei(fahrplan_datei)
+        .fahrstrassen_name(route.aufgleis_fahrstrasse)
+        .fahrplan_eintraege(route.fahrplan_eintraege)
         .fahrzeug_varianten(rolling_stock_template.value.fahrzeug_varianten)
         .mindest_bremshundertstel(rolling_stock_template.value.mindest_bremshundertstel)
         .build();
-
-    // TODO: apply train config
 
     Ok(
         TypedZusi::<Zug>::builder()

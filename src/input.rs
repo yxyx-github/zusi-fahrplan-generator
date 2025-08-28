@@ -5,7 +5,7 @@ use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{InvalidBasePath, ZusiPath};
 
 pub mod fahrplan_config;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "ZusiEnvironment")]
 pub struct ZusiEnvironmentConfig<T> {
     /// Path to own data directory root
@@ -71,7 +71,7 @@ mod tests {
     use crate::test_utils::cleanup_xml;
     use quick_xml::{de, se};
 
-    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
     struct ExampleValue {
         #[serde(rename = "$value")]
         pub value: String,
