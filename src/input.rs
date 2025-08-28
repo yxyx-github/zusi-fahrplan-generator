@@ -4,6 +4,7 @@ use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{InvalidBasePath, ZusiPath};
 
 pub mod fahrplan_config;
+mod schedule;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "ZusiEnvironment")]
