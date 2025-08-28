@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
-use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::helpers::read_zug;
 use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource};
 use crate::input::ZusiEnvironment;
+use std::path::PathBuf;
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 pub struct ResolvedRoute {
     pub aufgleis_fahrstrasse: String,

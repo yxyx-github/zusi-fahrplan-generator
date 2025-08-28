@@ -7,7 +7,7 @@ use time::Duration;
 #[serde(deny_unknown_fields)]
 pub struct Schedule {
     #[serde(rename = "ScheduleEntry")]
-    pub value: Vec<ScheduleEntry>,
+    pub entries: Vec<ScheduleEntry>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -54,7 +54,7 @@ mod tests {
 
     fn deserialized_schedule() -> Schedule {
         Schedule {
-            value: vec![
+            entries: vec![
                 ScheduleEntry {
                     betriebsstelle: "a".into(),
                     driving_time: Duration::seconds(0),
