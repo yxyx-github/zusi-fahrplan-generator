@@ -2,8 +2,8 @@ use crate::core::schedule::longest_common_coherent_subsequence::longest_common_c
 use crate::input::schedule::{Schedule, ScheduleEntry};
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
-pub fn prepare_entries<'f, 's>(mut fahrplan_eintraege: &'f mut Vec<FahrplanEintrag>, schedule: &'s Schedule) -> Vec<(&'f mut FahrplanEintrag, Option<&'s ScheduleEntry>)> {
-    let mut fahrplan_eintraege: Vec<&'f mut FahrplanEintrag> = fahrplan_eintraege
+pub fn prepare_entries<'f, 's>(fahrplan_eintraege: &'f mut Vec<FahrplanEintrag>, schedule: &'s Schedule) -> Vec<(&'f mut FahrplanEintrag, Option<&'s ScheduleEntry>)> {
+    let fahrplan_eintraege: Vec<&'f mut FahrplanEintrag> = fahrplan_eintraege
         .iter_mut()
         .filter(|eintrag| eintrag.abfahrt.is_some())
         .collect();
