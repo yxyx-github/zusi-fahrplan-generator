@@ -4,9 +4,9 @@ use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::generate_train::generate_route::ResolvedRoute;
 use crate::core::fahrplan_generator::helpers::read_zug;
 use crate::core::schedules::apply::apply_schedule;
+use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RoutePartSource, RouteTimeFix, RouteTimeFixType};
 use crate::input::schedule::Schedule;
-use crate::input::ZusiEnvironment;
 
 pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart, zug_nummer: &str) -> Result<ResolvedRoute, GenerateFahrplanError> {
     let mut resolved_route_part = match route_part.source {

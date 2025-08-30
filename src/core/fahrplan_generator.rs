@@ -7,12 +7,12 @@ use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::generate_train::generate_zug;
 use crate::core::fahrplan_generator::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
 use crate::input::fahrplan_config::FahrplanConfig;
-use crate::input::ZusiEnvironment;
 use zusi_xml_lib::xml::zusi::fahrplan::zug_datei_eintrag::ZugDateiEintrag;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
+use crate::input::environment::zusi_environment::ZusiEnvironment;
 
 pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Result<(), GenerateFahrplanError> {
     let generate_from = env.path_to_prejoined_zusi_path(&config.generate_from).map_err(|error| (&config.generate_from, error))?;

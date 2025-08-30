@@ -3,8 +3,8 @@ pub mod generate_route_part;
 use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::generate_train::generate_route::generate_route_part::generate_route_part;
 use crate::input::fahrplan_config::RouteConfig;
-use crate::input::ZusiEnvironment;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+use crate::input::environment::zusi_environment::ZusiEnvironment;
 
 pub struct ResolvedRoute {
     pub aufgleis_fahrstrasse: String,

@@ -132,10 +132,10 @@ pub struct CopyDelayTask {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::input::ZusiEnvironmentConfig;
     use quick_xml::{de, se};
     use serde_helpers::xml::test_utils::cleanup_xml;
     use time::macros::datetime;
+    use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment basePath="path/to/Zusi3User">
@@ -165,7 +165,7 @@ mod tests {
 
     fn expected_deserialized() -> ZusiEnvironmentConfig<FahrplanConfig> {
         ZusiEnvironmentConfig {
-            base_path: "path/to/Zusi3User".into(),
+            data_dir: "path/to/Zusi3User".into(),
             value: FahrplanConfig {
                 generate_at: "./path/to/destination.fpn".into(),
                 generate_from: "./path/to/template.fpn".into(),
