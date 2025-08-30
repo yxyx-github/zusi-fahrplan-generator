@@ -48,3 +48,100 @@ fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<
         fahrplan_eintraege: route_template.value.fahrplan_eintraege,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use tempfile::tempdir;
+    use time::macros::datetime;
+    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+    use super::*;
+
+    const TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei/>
+                <FahrplanEintrag Ank="2024-06-20 08:39:00" Abf="2024-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+                    <FahrplanSignalEintrag FahrplanSignal="N1"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
+                <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrplanEintrag Betrst="Voldagsen" FplEintrag="1">
+                    <FahrplanSignalEintrag FahrplanSignal="A"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Ank="2024-06-20 08:52:10" Abf="2024-06-20 08:52:50" Signalvorlauf="160" Betrst="Voldagsen">
+                    <FahrplanSignalEintrag FahrplanSignal="N2"/>
+                </FahrplanEintrag>
+                <FahrzeugVarianten/>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const SCHEDULE: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Schedule>
+            <ScheduleEntry Betriebsstelle="Elze" DrivingTime="00:02:20" StopTime="00:02:40"/>
+            <ScheduleEntry Betriebsstelle="Mehle Hp" DrivingTime="00:03:20"/>
+            <ScheduleEntry Betriebsstelle="Osterwald Hp" DrivingTime="00:03:00" StopTime="00:00:50"/>
+            <ScheduleEntry Betriebsstelle="Voldagsen" DrivingTime="00:03:30" StopTime="00:00:40"/>
+        </Schedule>
+    "#;
+
+    #[test]
+    fn test_generate_route_part() {
+        let tmp_dir = tempdir().unwrap();
+
+        let trn_path = tmp_dir.path().join("00000.trn");
+        fs::write(&trn_path, TRN).unwrap();
+
+        let schedule_path = tmp_dir.path().join("00000.schedule.xml");
+        fs::write(&schedule_path, SCHEDULE).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_part = RoutePart {
+            source: RoutePartSource::TrainFileByPath { path: trn_path.clone() },
+            override_meta_data: false,
+            time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
+            apply_schedule: Some(ApplySchedule { path: schedule_path.clone() }),
+        };
+
+        let expected = ResolvedRoute {
+            aufgleis_fahrstrasse: "Aufgleispunkt -&gt; Hildesheim Hbf F".into(),
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:40:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:42:40)))
+                    .signal_vorlauf(180.)
+                    .betriebsstelle("Elze".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
+                    .betriebsstelle("Mehle Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:49:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:49:50)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Osterwald Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("Voldagsen".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:53:20)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:54:00)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Voldagsen".into())
+                    .build(),
+            ],
+        };
+
+        let resolved_route_part = generate_route_part(&env, route_part, "00000").unwrap();
+    }
+}

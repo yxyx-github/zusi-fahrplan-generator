@@ -11,15 +11,6 @@ pub struct ResolvedRoute {
     pub fahrplan_eintraege: Vec<FahrplanEintrag>,
 }
 
-impl ResolvedRoute {
-    fn new() -> Self {
-        Self {
-            aufgleis_fahrstrasse: "".into(),
-            fahrplan_eintraege: vec![],
-        }
-    }
-}
-
 pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig, zug_nummer: &str) -> Result<ResolvedRoute, GenerateFahrplanError> {
     let resolved_route_parts: Result<Vec<_>, _> = config.parts
         .into_iter()
