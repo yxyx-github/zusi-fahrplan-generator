@@ -1,6 +1,6 @@
 use std::path::PathBuf;
+use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
-use zusi_xml_lib::xml::zusi::{ReadZusiXMLFileError, WriteZusiXMLFileError};
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::InvalidBasePath;
 use crate::core::schedule::apply::ApplyScheduleError;
 use crate::input::fahrplan_config::RoutePartSource;
@@ -31,6 +31,7 @@ pub enum GenerateFahrplanError {
     },
     InvalidSchedule {
         zug_nummer: String,
+        path: PathBuf,
         error: ApplyScheduleError,
     },
 }
@@ -41,14 +42,14 @@ pub enum InvalidPathCause {
     InvalidBasePath,
 }
 
-impl<P: Into<PathBuf>> From<(P, ReadZusiXMLFileError)> for GenerateFahrplanError {
-    fn from((path, error): (P, ReadZusiXMLFileError)) -> Self {
+impl<P: Into<PathBuf>> From<(P, ReadXMLFileError)> for GenerateFahrplanError {
+    fn from((path, error): (P, ReadXMLFileError)) -> Self {
         match error {
-            ReadZusiXMLFileError::IOError(error) => GenerateFahrplanError::ReadFileError {
+            ReadXMLFileError::IOError(error) => GenerateFahrplanError::ReadFileError {
                 path: path.into(),
                 error: error.to_string(),
             },
-            ReadZusiXMLFileError::DeError(error) => GenerateFahrplanError::ReadFileError {
+            ReadXMLFileError::DeError(error) => GenerateFahrplanError::ReadFileError {
                 path: path.into(),
                 error: error.to_string(),
             },
@@ -56,14 +57,14 @@ impl<P: Into<PathBuf>> From<(P, ReadZusiXMLFileError)> for GenerateFahrplanError
     }
 }
 
-impl<P: Into<PathBuf>> From<(P, WriteZusiXMLFileError)> for GenerateFahrplanError {
-    fn from((path, error): (P, WriteZusiXMLFileError)) -> Self {
+impl<P: Into<PathBuf>> From<(P, WriteXMLFileError)> for GenerateFahrplanError {
+    fn from((path, error): (P, WriteXMLFileError)) -> Self {
         match error {
-            WriteZusiXMLFileError::IOError(error) => GenerateFahrplanError::WriteFileError {
+            WriteXMLFileError::IOError(error) => GenerateFahrplanError::WriteFileError {
                 path: path.into(),
                 error: error.to_string(),
             },
-            WriteZusiXMLFileError::SeError(error) => GenerateFahrplanError::WriteFileError {
+            WriteXMLFileError::SeError(error) => GenerateFahrplanError::WriteFileError {
                 path: path.into(),
                 error: error.to_string(),
             },

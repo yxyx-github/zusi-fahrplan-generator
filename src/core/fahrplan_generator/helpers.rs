@@ -1,5 +1,6 @@
 use crate::core::fahrplan_generator::error::{GenerateFahrplanError, InvalidPathCause};
 use std::path::{Path, PathBuf};
+use serde_helpers::xml::FromXML;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;

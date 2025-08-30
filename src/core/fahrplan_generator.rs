@@ -2,6 +2,7 @@ mod error;
 mod generate_train;
 mod helpers;
 
+use serde_helpers::xml::ToXML;
 use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::generate_train::generate_zug;
 use crate::core::fahrplan_generator::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
