@@ -4,6 +4,7 @@ use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource};
 use crate::input::ZusiEnvironment;
 use std::path::PathBuf;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+use crate::core::schedule;
 
 pub struct ResolvedRoute {
     pub aufgleis_fahrstrasse: String,
@@ -35,7 +36,7 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig, zug_nummer: &s
 }
 
 fn retrieve_route_part(env: &ZusiEnvironment, part: RoutePart) -> Result<ResolvedRoute, GenerateFahrplanError> {
-    let route_part = match part.source {
+    let mut route_part = match part.source {
         RoutePartSource::TrainFileByPath { ref path } => retrieve_route_part_by_path(env, path),
         RoutePartSource::TrainConfigByNummer { .. } => todo!(),
     }?;
@@ -43,7 +44,9 @@ fn retrieve_route_part(env: &ZusiEnvironment, part: RoutePart) -> Result<Resolve
         Err(GenerateFahrplanError::EmptyRoutePart { source: part.source })
     } else {
         // TODO: override meta data
-        // TODO: apply schedule
+        if let Some(schedule) = part.apply_schedule {
+            // schedule::apply(&mut route_part.fahrplan_eintraege, todo!())?;
+        }
         // TODO: apply TimeFix
         Ok(route_part)
     }
