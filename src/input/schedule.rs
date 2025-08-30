@@ -1,6 +1,6 @@
-use crate::serde_helpers::with::duration_option_format;
-use crate::serde_helpers::with::duration_format;
 use serde::{Deserialize, Serialize};
+use serde_helpers::with::duration::duration_format;
+use serde_helpers::with::duration::duration_option_format;
 use time::Duration;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -38,8 +38,8 @@ pub enum TimeFix {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::cleanup_xml;
     use quick_xml::{de, se};
+    use serde_helpers::xml::test_utils::cleanup_xml;
     use time::Duration;
 
     const SERIALIZED_SCHEDULE: &'static str = r#"

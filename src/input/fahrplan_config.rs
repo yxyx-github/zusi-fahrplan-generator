@@ -1,6 +1,6 @@
-use crate::serde_helpers::with::duration_format;
-use crate::serde_helpers::with::date_time_format;
 use serde::{Deserialize, Serialize};
+use serde_helpers::with::date_time::date_time_format;
+use serde_helpers::with::duration::duration_format;
 use std::ops::Not;
 use std::path::PathBuf;
 use time::{Duration, PrimitiveDateTime};
@@ -132,10 +132,10 @@ pub struct CopyDelayTask {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::cleanup_xml;
-    use quick_xml::{de, se};
-    use time::macros::datetime;
     use crate::input::ZusiEnvironmentConfig;
+    use quick_xml::{de, se};
+    use serde_helpers::xml::test_utils::cleanup_xml;
+    use time::macros::datetime;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment basePath="path/to/Zusi3User">

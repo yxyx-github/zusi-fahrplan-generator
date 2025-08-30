@@ -69,8 +69,8 @@ impl ZusiEnvironment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::cleanup_xml;
     use quick_xml::{de, se};
+    use serde_helpers::xml::test_utils::cleanup_xml;
 
     #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
     struct ExampleValue {
