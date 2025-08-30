@@ -1,4 +1,4 @@
-use crate::core::schedule::longest_common_coherent_subsequence::longest_common_coherent_subsequence;
+use crate::core::schedules::longest_common_coherent_subsequence::longest_common_coherent_subsequence;
 use crate::input::schedule::{Schedule, ScheduleEntry};
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 

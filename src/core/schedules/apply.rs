@@ -1,4 +1,4 @@
-use crate::core::schedule::prepare_entries::prepare_entries;
+use crate::core::schedules::prepare_entries::prepare_entries;
 use crate::input::schedule::{Schedule, TimeFix};
 use time::{Duration, PrimitiveDateTime};
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
@@ -28,7 +28,7 @@ impl ApplyScheduleState {
     }
 }
 
-pub fn apply(fahrplan_eintraege: &mut Vec<FahrplanEintrag>, schedule: &Schedule) -> Result<(), ApplyScheduleError> {
+pub fn apply_schedule(fahrplan_eintraege: &mut Vec<FahrplanEintrag>, schedule: &Schedule) -> Result<(), ApplyScheduleError> {
     let mut prepared_entries = prepare_entries(fahrplan_eintraege, schedule);
 
     let ApplyScheduleState { time_fix_diff, .. } = prepared_entries.iter_mut().try_fold(
@@ -154,7 +154,7 @@ mod tests {
 
         let mut modified = fahrplan_eintraege.clone();
 
-        apply(&mut modified, &schedule).unwrap();
+        apply_schedule(&mut modified, &schedule).unwrap();
 
         for entry in modified.iter() {
             println!("{}: {:?} - {:?}", entry.betriebsstelle, entry.ankunft, entry.abfahrt);

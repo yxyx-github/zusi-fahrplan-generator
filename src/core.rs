@@ -1,2 +1,2 @@
 mod fahrplan_generator;
-pub mod schedule;
+pub mod schedules;

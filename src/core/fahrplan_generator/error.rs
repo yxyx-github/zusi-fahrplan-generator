@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::InvalidBasePath;
-use crate::core::schedule::apply::ApplyScheduleError;
+use crate::core::schedules::apply::ApplyScheduleError;
 use crate::input::fahrplan_config::RoutePartSource;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,10 +29,13 @@ pub enum GenerateFahrplanError {
     EmptyRoutePart {
         source: RoutePartSource,
     },
-    InvalidSchedule {
+    CouldNotApplySchedule {
         zug_nummer: String,
         path: PathBuf,
         error: ApplyScheduleError,
+    },
+    CouldNotApplyTimeFix {
+        zug_nummer: String,
     },
 }
 

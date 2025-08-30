@@ -56,7 +56,7 @@ pub struct RoutePart {
     pub override_meta_data: bool, // TODO: remove, instead add meta data source to TrainConfig directly
 
     #[serde(rename = "TimeFix", default, skip_serializing_if = "Option::is_none")]
-    pub time_fix: Option<TimeFix>,
+    pub time_fix: Option<RouteTimeFix>,
 
     #[serde(rename = "ApplySchedule", default, skip_serializing_if = "Option::is_none")]
     pub apply_schedule: Option<ApplySchedule>,
@@ -84,9 +84,9 @@ pub struct RollingStock {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct TimeFix {
+pub struct RouteTimeFix {
     #[serde(rename = "@type")]
-    pub fix_type: TimeFixType,
+    pub fix_type: RouteTimeFixType,
 
     #[serde(rename = "@value", with = "date_time_format")]
     pub value: PrimitiveDateTime,
@@ -94,7 +94,7 @@ pub struct TimeFix {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub enum TimeFixType {
+pub enum RouteTimeFixType {
     StartAbf,
     EndAnk,
 }
@@ -178,7 +178,7 @@ mod tests {
                                 RoutePart {
                                     source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
                                     override_meta_data: true,
-                                    time_fix: Some(TimeFix { fix_type: TimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
+                                    time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
                                     apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
                                 },
                                 RoutePart {
