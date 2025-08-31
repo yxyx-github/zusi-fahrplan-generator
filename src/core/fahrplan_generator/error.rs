@@ -26,6 +26,9 @@ pub enum GenerateFahrplanError {
     NoRouteParts {
         zug_nummer: String,
     },
+    RoutePartsCanNotBeMerged {
+        zug_nummer: String,
+    },
     EmptyRoutePart {
         source: RoutePartSource,
     },
