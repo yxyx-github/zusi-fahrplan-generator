@@ -41,7 +41,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_from_zusi_environment_config() {
+    fn test_from_zusi_environment_config_config_dir_inside_data_dir() {
         assert_eq!(
             ZusiEnvironmentConfig {
                 data_dir: "/path/to/data_dir".into(),
@@ -50,6 +50,20 @@ mod tests {
             (ZusiEnvironment {
                 data_dir: "/path/to/data_dir".into(),
                 config_dir: "/path/to/data_dir/and/then/config_dir".into(),
+            }, ()),
+        );
+    }
+
+    #[test]
+    fn test_from_zusi_environment_config_data_dir_inside_config_dir() {
+        assert_eq!(
+            ZusiEnvironmentConfig {
+                data_dir: "/path/to/config_dir/and/then/data_dir".into(),
+                value: (),
+            }.into_zusi_environment("/path/to/config_dir".into()),
+            (ZusiEnvironment {
+                data_dir: "/path/to/config_dir/and/then/data_dir".into(),
+                config_dir: "/path/to/config_dir".into(),
             }, ()),
         );
     }
@@ -73,6 +87,16 @@ mod tests {
         let env = ZusiEnvironment {
             data_dir: "/path/to/data_dir".into(),
             config_dir: "/path/to/other/and/then/config_dir".into(),
+        };
+
+        let _: InvalidBasePath = env.path_to_prejoined_zusi_path("to/any/file").unwrap_err();
+    }
+
+    #[test]
+    fn test_path_to_prejoined_zusi_path_with_invalid_base_path_data_dir_inside_config_dir() {
+        let env = ZusiEnvironment {
+            data_dir: "/path/to/config_dir/and/then/data_dir".into(),
+            config_dir: "/path/to/config_dir".into(),
         };
 
         let _: InvalidBasePath = env.path_to_prejoined_zusi_path("to/any/file").unwrap_err();
