@@ -16,13 +16,13 @@ pub struct FahrplanConfig {
     #[serde(rename = "@generateFrom")]
     pub generate_from: PathBuf,
 
-    #[serde(rename = "Train", default)]
-    pub trains: Vec<TrainConfig>,
+    #[serde(rename = "Zug", default)]
+    pub trains: Vec<ZugConfig>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct TrainConfig {
+pub struct ZugConfig {
     #[serde(rename = "@nummer")]
     pub nummer: String,
 
@@ -140,7 +140,7 @@ mod tests {
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
-                <Train nummer="20000" gattung="RB">
+                <Zug nummer="20000" gattung="RB">
                     <Route>
                         <RoutePart overrideMetaData="true">
                             <TrainFileByPath path="./path/to/route-part.trn"/>
@@ -158,7 +158,7 @@ mod tests {
                             <RollingStock path="./path/to/rolling-stock.trn"/>
                         </CopyDelayTask>
                     </CopyDelay>
-                </Train>
+                </Zug>
             </Fahrplan>
         </ZusiEnvironment>
     "#;
@@ -170,7 +170,7 @@ mod tests {
                 generate_at: "./path/to/destination.fpn".into(),
                 generate_from: "./path/to/template.fpn".into(),
                 trains: vec![
-                    TrainConfig {
+                    ZugConfig {
                         nummer: "20000".into(),
                         gattung: "RB".into(),
                         route: RouteConfig {

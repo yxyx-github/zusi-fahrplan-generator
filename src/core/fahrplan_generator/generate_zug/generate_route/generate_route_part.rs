@@ -1,37 +1,53 @@
-use crate::core::fahrplan_generator::error::GenerateFahrplanError;
-use crate::core::fahrplan_generator::generate_train::generate_route::ResolvedRoute;
+use crate::core::fahrplan_generator::file_error::FileError;
+use crate::core::fahrplan_generator::generate_zug::generate_route::ResolvedRoute;
 use crate::core::fahrplan_generator::helpers::read_zug;
-use crate::core::schedules::apply::apply_schedule;
+use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RoutePartSource, RouteTimeFix, RouteTimeFixType};
 use crate::input::schedule::Schedule;
 use serde_helpers::xml::FromXML;
 use std::path::PathBuf;
 
-pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart, zug_nummer: &str) -> Result<ResolvedRoute, GenerateFahrplanError> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GenerateRoutePartError {
+    EmptyRoutePart,
+    CouldNotApplySchedule {
+        error: ApplyScheduleError,
+    },
+    /// Occours if corresponding time is [None].
+    CouldNotApplyTimeFix,
+    ReadRouteError {
+        error: FileError, // TODO: won't be always a FileError, e.g. if TrainConfigByNummer will be implemented
+    },
+}
+
+impl From<ApplyScheduleError> for GenerateRoutePartError {
+    fn from(error: ApplyScheduleError) -> Self {
+        GenerateRoutePartError::CouldNotApplySchedule {error }
+    }
+}
+
+pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Result<ResolvedRoute, GenerateRoutePartError> {
     let mut resolved_route_part = match route_part.source {
         RoutePartSource::TrainFileByPath { ref path } => retrieve_route_part_by_path(env, path),
         RoutePartSource::TrainConfigByNummer { .. } => todo!(),
     }?;
     if resolved_route_part.fahrplan_eintraege.is_empty() {
-        Err(GenerateFahrplanError::EmptyRoutePart { source: route_part.source })
+        Err(GenerateRoutePartError::EmptyRoutePart)
     } else {
-        // TODO: override meta data
         if let Some(ApplySchedule { path, .. }) = route_part.apply_schedule {
-            let prejoined_path = env.path_to_prejoined_zusi_path(&path).map_err(|error| (&path, error))?;
-            let schedule = Schedule::from_xml_file_by_path(prejoined_path.full_path()).map_err(|error| (prejoined_path.full_path(), error))?;
-            apply_schedule(&mut resolved_route_part.fahrplan_eintraege, &schedule).map_err(|error| GenerateFahrplanError::CouldNotApplySchedule {
-                zug_nummer: zug_nummer.into(),
-                path,
-                error,
-            })?;
+            let prejoined_path = env.path_to_prejoined_zusi_path(&path)
+                .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (&path, error).into() })?;
+            let schedule = Schedule::from_xml_file_by_path(prejoined_path.full_path())
+                .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (prejoined_path.full_path(), error).into() })?;
+            apply_schedule(&mut resolved_route_part.fahrplan_eintraege, &schedule)?;
         }
         if let Some(RouteTimeFix { fix_type, value }) = route_part.time_fix {
             let time_fix_diff = match fix_type {
                 RouteTimeFixType::StartAbf => resolved_route_part.fahrplan_eintraege.first().and_then(|e| e.abfahrt),
                 RouteTimeFixType::EndAnk => resolved_route_part.fahrplan_eintraege.last().and_then(|e| e.ankunft),
             }.map(|time| value - time)
-                .ok_or(GenerateFahrplanError::CouldNotApplyTimeFix { zug_nummer: zug_nummer.into() })?;
+                .ok_or(GenerateRoutePartError::CouldNotApplyTimeFix)?;
             resolved_route_part.fahrplan_eintraege.iter_mut().for_each(|fahrplan_eintrag| {
                 fahrplan_eintrag.ankunft.map(|ankunft| ankunft + time_fix_diff);
                 fahrplan_eintrag.abfahrt.map(|abfahrt| abfahrt + time_fix_diff);
@@ -41,9 +57,11 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart, zug_num
     }
 }
 
-fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoute, GenerateFahrplanError> {
-    let path = env.path_to_prejoined_zusi_path(path).map_err(|error| (path, error))?;
-    let route_template = read_zug(path.full_path())?;
+fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoute, GenerateRoutePartError> {
+    let path = env.path_to_prejoined_zusi_path(path)
+        .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (&path, error).into() })?;
+    let route_template = read_zug(path.full_path())
+        .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?;
     Ok(ResolvedRoute {
         aufgleis_fahrstrasse: route_template.value.fahrstrassen_name,
         fahrplan_eintraege: route_template.value.fahrplan_eintraege,
@@ -143,6 +161,6 @@ mod tests {
             ],
         };
 
-        let resolved_route_part = generate_route_part(&env, route_part, "00000").unwrap();
+        let resolved_route_part = generate_route_part(&env, route_part).unwrap();
     }
 }

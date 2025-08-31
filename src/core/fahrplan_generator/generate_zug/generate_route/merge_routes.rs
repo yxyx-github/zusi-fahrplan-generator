@@ -1,8 +1,9 @@
-use crate::core::fahrplan_generator::generate_train::generate_route::ResolvedRoute;
+use crate::core::fahrplan_generator::generate_zug::generate_route::ResolvedRoute;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// For criteria see [can_merge]
 pub struct RoutesCanNotBeMerged;
 
 pub fn merge_routes(mut current: ResolvedRoute, mut new: ResolvedRoute) -> Result<ResolvedRoute, RoutesCanNotBeMerged> {
