@@ -1,6 +1,6 @@
-use crate::core::fahrplan_generator::error::{GenerateFahrplanError, InvalidPathCause};
-use std::path::{Path, PathBuf};
+use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use serde_helpers::xml::FromXML;
+use std::path::{Path, PathBuf};
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
@@ -35,14 +35,11 @@ pub fn read_zug<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Zug
     }
 }
 
-pub fn datei_from_path<P: AsRef<Path> + Into<PathBuf>>(path: P, nur_info: bool) -> Result<Datei, GenerateFahrplanError> {
-    match path.as_ref().to_str() {
-        None => Err(GenerateFahrplanError::InvalidPath {
-            path: path.into(),
-            cause: InvalidPathCause::ConversionToStringFailed,
-        }),
-        Some(path_str) => Ok(Datei::builder().dateiname(path_str.into()).nur_info(nur_info).build()),
-    }
+pub fn datei_from_path<P: Into<PathBuf>>(path: P, nur_info: bool) -> Result<Datei, GenerateFahrplanError> {
+    let path = path.into();
+    let zusi_path = path.clone().try_into().map_err(|error| GenerateFahrplanError::from((path, error)))?;
+
+    Ok(Datei::builder().dateiname(zusi_path).nur_info(nur_info).build())
 }
 
 pub fn datei_from_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(path: P, nur_info: bool) -> Result<Datei, GenerateFahrplanError> {
@@ -50,7 +47,7 @@ pub fn datei_from_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(path: P, nur_in
 }
 
 pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath) -> PrejoinedZusiPath {
-    fahrplan_path.join_to_zusi_path(format!("{}{}.trn", zug.value.gattung, zug.value.nummer))
+    fahrplan_path.join_to_zusi_path(format!("./{}{}.trn", zug.value.gattung, zug.value.nummer)).unwrap()
 }
 
 #[cfg(test)]

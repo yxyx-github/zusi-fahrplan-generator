@@ -138,7 +138,7 @@ mod tests {
     use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
-        <ZusiEnvironment basePath="path/to/Zusi3User">
+        <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
                 <Train nummer="20000" gattung="RB">
                     <Route>

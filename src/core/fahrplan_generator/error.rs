@@ -1,9 +1,9 @@
-use std::path::PathBuf;
-use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
-use zusi_xml_lib::xml::zusi::info::DateiTyp;
-use zusi_xml_lib::xml::zusi::lib::path::zusi_path::InvalidBasePath;
 use crate::core::schedules::apply::ApplyScheduleError;
 use crate::input::fahrplan_config::RoutePartSource;
+use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
+use std::path::PathBuf;
+use zusi_xml_lib::xml::zusi::info::DateiTyp;
+use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
@@ -21,7 +21,7 @@ pub enum GenerateFahrplanError {
     },
     InvalidPath {
         path: PathBuf,
-        cause: InvalidPathCause,
+        error: ZusiPathError,
     },
     NoRouteParts {
         zug_nummer: String,
@@ -37,12 +37,6 @@ pub enum GenerateFahrplanError {
     CouldNotApplyTimeFix {
         zug_nummer: String,
     },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InvalidPathCause {
-    ConversionToStringFailed,
-    InvalidBasePath,
 }
 
 impl<P: Into<PathBuf>> From<(P, ReadXMLFileError)> for GenerateFahrplanError {
@@ -75,11 +69,11 @@ impl<P: Into<PathBuf>> From<(P, WriteXMLFileError)> for GenerateFahrplanError {
     }
 }
 
-impl<P: Into<PathBuf>> From<(P, InvalidBasePath)> for GenerateFahrplanError {
-    fn from((path, _): (P, InvalidBasePath)) -> Self {
+impl<P: Into<PathBuf>> From<(P, ZusiPathError)> for GenerateFahrplanError {
+    fn from((path, error): (P, ZusiPathError)) -> Self {
         GenerateFahrplanError::InvalidPath {
             path: path.into(),
-            cause: InvalidPathCause::InvalidBasePath,
+            error,
         }
     }
 }

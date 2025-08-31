@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-use serde_helpers::xml::FromXML;
 use crate::core::fahrplan_generator::error::GenerateFahrplanError;
 use crate::core::fahrplan_generator::generate_train::generate_route::ResolvedRoute;
 use crate::core::fahrplan_generator::helpers::read_zug;
@@ -7,6 +5,8 @@ use crate::core::schedules::apply::apply_schedule;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RoutePartSource, RouteTimeFix, RouteTimeFixType};
 use crate::input::schedule::Schedule;
+use serde_helpers::xml::FromXML;
+use std::path::PathBuf;
 
 pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart, zug_nummer: &str) -> Result<ResolvedRoute, GenerateFahrplanError> {
     let mut resolved_route_part = match route_part.source {
@@ -18,7 +18,8 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart, zug_num
     } else {
         // TODO: override meta data
         if let Some(ApplySchedule { path, .. }) = route_part.apply_schedule {
-            let schedule = Schedule::from_xml_file_by_path(&path).map_err(|error| (&path, error))?;
+            let prejoined_path = env.path_to_prejoined_zusi_path(&path).map_err(|error| (&path, error))?;
+            let schedule = Schedule::from_xml_file_by_path(prejoined_path.full_path()).map_err(|error| (prejoined_path.full_path(), error))?;
             apply_schedule(&mut resolved_route_part.fahrplan_eintraege, &schedule).map_err(|error| GenerateFahrplanError::CouldNotApplySchedule {
                 zug_nummer: zug_nummer.into(),
                 path,
@@ -51,11 +52,11 @@ fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
-    use super::*;
 
     const TRN: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -96,6 +97,8 @@ mod tests {
         let trn_path = tmp_dir.path().join("00000.trn");
         fs::write(&trn_path, TRN).unwrap();
 
+        println!("trn path: {:?}", trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned());
+
         let schedule_path = tmp_dir.path().join("00000.schedule.xml");
         fs::write(&schedule_path, SCHEDULE).unwrap();
 
@@ -105,10 +108,10 @@ mod tests {
         };
 
         let route_part = RoutePart {
-            source: RoutePartSource::TrainFileByPath { path: trn_path.clone() },
+            source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
             override_meta_data: false,
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
-            apply_schedule: Some(ApplySchedule { path: schedule_path.clone() }),
+            apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
         };
 
         let expected = ResolvedRoute {

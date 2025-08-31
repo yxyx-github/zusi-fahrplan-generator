@@ -6,7 +6,7 @@ use crate::input::environment::zusi_environment::ZusiEnvironment;
 #[serde(deny_unknown_fields, rename = "ZusiEnvironment")]
 pub struct ZusiEnvironmentConfig<T> {
     /// Path to own data directory root
-    #[serde(rename = "@basePath")]
+    #[serde(rename = "@dataDir")]
     pub data_dir: PathBuf,
 
     #[serde(rename = "$value")]
@@ -32,7 +32,7 @@ mod tests {
     }
 
     const EXPECTED_SERIALIZED: &'static str = r#"
-        <ZusiEnvironment basePath="path/to/base">
+        <ZusiEnvironment dataDir="path/to/data_dir">
             <ExampleValue>A</ExampleValue>
             <ExampleValue>B</ExampleValue>
             <ExampleValue>C</ExampleValue>
@@ -41,7 +41,7 @@ mod tests {
 
     fn expected_deserialized() -> ZusiEnvironmentConfig<Vec<ExampleValue>> {
         ZusiEnvironmentConfig {
-            data_dir: "path/to/base".into(),
+            data_dir: "path/to/data_dir".into(),
             value: vec![
                 ExampleValue { value: "A".into() },
                 ExampleValue { value: "B".into() },
