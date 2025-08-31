@@ -97,8 +97,6 @@ mod tests {
         let trn_path = tmp_dir.path().join("00000.trn");
         fs::write(&trn_path, TRN).unwrap();
 
-        println!("trn path: {:?}", trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned());
-
         let schedule_path = tmp_dir.path().join("00000.schedule.xml");
         fs::write(&schedule_path, SCHEDULE).unwrap();
 

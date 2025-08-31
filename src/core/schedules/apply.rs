@@ -156,10 +156,6 @@ mod tests {
 
         apply_schedule(&mut modified, &schedule).unwrap();
 
-        for entry in modified.iter() {
-            println!("{}: {:?} - {:?}", entry.betriebsstelle, entry.ankunft, entry.abfahrt);
-        }
-
         assert_eq!(modified, vec![
             FahrplanEintrag::builder().betriebsstelle("A".into()).build(),
             FahrplanEintrag::builder().betriebsstelle("A".into()).abfahrt(Some(datetime!(2022-07-29 04:00:40))).build(),
