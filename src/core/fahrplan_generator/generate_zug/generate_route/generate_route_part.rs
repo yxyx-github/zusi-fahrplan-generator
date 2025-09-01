@@ -49,8 +49,8 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
             }.map(|time| value - time)
                 .ok_or(GenerateRoutePartError::CouldNotApplyTimeFix)?;
             resolved_route_part.fahrplan_eintraege.iter_mut().for_each(|fahrplan_eintrag| {
-                fahrplan_eintrag.ankunft.map(|ankunft| ankunft + time_fix_diff);
-                fahrplan_eintrag.abfahrt.map(|abfahrt| abfahrt + time_fix_diff);
+                fahrplan_eintrag.ankunft = fahrplan_eintrag.ankunft.map(|ankunft| ankunft + time_fix_diff);
+                fahrplan_eintrag.abfahrt = fahrplan_eintrag.abfahrt.map(|abfahrt| abfahrt + time_fix_diff);
             });
         }
         Ok(resolved_route_part)
@@ -74,6 +74,8 @@ mod tests {
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
+    use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
+    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
     const TRN: &str = r#"
@@ -131,13 +133,16 @@ mod tests {
         };
 
         let expected = ResolvedRoute {
-            aufgleis_fahrstrasse: "Aufgleispunkt -&gt; Hildesheim Hbf F".into(),
+            aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()
                     .ankunft(Some(datetime!(2024-06-20 08:40:00)))
                     .abfahrt(Some(datetime!(2024-06-20 08:42:40)))
                     .signal_vorlauf(180.)
                     .betriebsstelle("Elze".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N1".into()).build(),
+                    ])
                     .build(),
                 FahrplanEintrag::builder()
                     .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
@@ -151,16 +156,28 @@ mod tests {
                     .build(),
                 FahrplanEintrag::builder()
                     .betriebsstelle("Voldagsen".into())
+                    .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
+                    ])
                     .build(),
                 FahrplanEintrag::builder()
                     .ankunft(Some(datetime!(2024-06-20 08:53:20)))
                     .abfahrt(Some(datetime!(2024-06-20 08:54:00)))
                     .signal_vorlauf(160.)
                     .betriebsstelle("Voldagsen".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N2".into()).build(),
+                    ])
                     .build(),
             ],
         };
 
         let resolved_route_part = generate_route_part(&env, route_part).unwrap();
+
+        assert_eq!(resolved_route_part, expected);
+
+        assert_eq!(fs::read_to_string(trn_path).unwrap(), TRN);
+        assert_eq!(fs::read_to_string(schedule_path).unwrap(), SCHEDULE);
     }
 }
