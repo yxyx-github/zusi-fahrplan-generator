@@ -1,8 +1,9 @@
+use crate::input::copy_delay_config::CopyDelayConfig;
+use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
 use serde_helpers::with::date_time::date_time_format;
-use serde_helpers::with::duration::duration_format;
 use std::path::PathBuf;
-use time::{Duration, PrimitiveDateTime};
+use time::PrimitiveDateTime;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
@@ -34,7 +35,7 @@ pub struct ZugConfig {
     pub route: RouteConfig,
 
     #[serde(rename = "RollingStock")]
-    pub rolling_stock: RollingStock,
+    pub rolling_stock: RollingStockConfig,
 
     #[serde(rename = "CopyDelay", default, skip_serializing_if = "Option::is_none")]
     pub copy_delay_config: Option<CopyDelayConfig>,
@@ -75,13 +76,6 @@ pub enum RoutePartSource {
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct RollingStock {
-    #[serde(rename = "@path")]
-    pub path: PathBuf,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct RouteTimeFix {
     #[serde(rename = "@type")]
     pub fix_type: RouteTimeFixType,
@@ -104,36 +98,15 @@ pub struct ApplySchedule {
     pub path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct CopyDelayConfig {
-    #[serde(rename = "CopyDelayTask")]
-    pub tasks: Vec<CopyDelayTask>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct CopyDelayTask {
-    #[serde(rename = "@delay", with = "duration_format")]
-    pub delay: Duration,
-
-    #[serde(rename = "@count")]
-    pub count: u32,
-
-    #[serde(rename = "@increment")]
-    pub increment: i32,
-
-    #[serde(rename = "RollingStock", default, skip_serializing_if = "Option::is_none")]
-    pub custom_rolling_stock: Option<RollingStock>,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::input::copy_delay_config::CopyDelayTask;
     use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
     use quick_xml::{de, se};
     use serde_helpers::xml::test_utils::cleanup_xml;
     use time::macros::datetime;
+    use time::Duration;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment dataDir="path/to/Zusi3User">
@@ -185,7 +158,7 @@ mod tests {
                                 },
                             ],
                         },
-                        rolling_stock: RollingStock { path: "./path/to/rolling-stock.trn".into() },
+                        rolling_stock: RollingStockConfig { path: "./path/to/rolling-stock.trn".into() },
                         copy_delay_config: Some(CopyDelayConfig {
                             tasks: vec![
                                 CopyDelayTask {
@@ -198,7 +171,7 @@ mod tests {
                                     delay: Duration::hours(2),
                                     count: 3,
                                     increment: 2,
-                                    custom_rolling_stock: Some(RollingStock { path: "./path/to/rolling-stock.trn".into() }),
+                                    custom_rolling_stock: Some(RollingStockConfig { path: "./path/to/rolling-stock.trn".into() }),
                                 },
                             ],
                         }),

@@ -1,4 +1,4 @@
-use crate::core::fahrplan_generator::file_error::{FileError, FileErrorCause};
+use crate::core::lib::file_error::{FileError, FileErrorCause};
 use serde_helpers::xml::FromXML;
 use std::path::{Path, PathBuf};
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;

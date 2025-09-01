@@ -1,10 +1,8 @@
-mod file_error;
 mod generate_zug;
-mod helpers;
 
-use crate::core::fahrplan_generator::file_error::FileError;
+use crate::core::lib::file_error::FileError;
 use crate::core::fahrplan_generator::generate_zug::{generate_zug, GenerateZugError};
-use crate::core::fahrplan_generator::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
+use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
 use crate::core::fahrplan_generator::GenerateFahrplanError::ReadFahrplanTemplateError;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::FahrplanConfig;
