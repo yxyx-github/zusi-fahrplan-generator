@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_helpers::with::date_time::date_time_format;
 use serde_helpers::with::duration::duration_format;
-use std::ops::Not;
 use std::path::PathBuf;
 use time::{Duration, PrimitiveDateTime};
 
@@ -28,6 +27,8 @@ pub struct ZugConfig {
 
     #[serde(rename = "@gattung")]
     pub gattung: String,
+    
+    // TODO: add further meta data
 
     #[serde(rename = "Route")]
     pub route: RouteConfig,
@@ -51,9 +52,6 @@ pub struct RouteConfig {
 pub struct RoutePart {
     #[serde(rename = "$value")]
     pub source: RoutePartSource,
-
-    #[serde(rename = "@overrideMetaData", default, skip_serializing_if = "<&bool>::not")]
-    pub override_meta_data: bool, // TODO: remove, instead add meta data source to TrainConfig directly
 
     #[serde(rename = "TimeFix", default, skip_serializing_if = "Option::is_none")]
     pub time_fix: Option<RouteTimeFix>,
@@ -132,17 +130,17 @@ pub struct CopyDelayTask {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
     use quick_xml::{de, se};
     use serde_helpers::xml::test_utils::cleanup_xml;
     use time::macros::datetime;
-    use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
                 <Zug nummer="20000" gattung="RB">
                     <Route>
-                        <RoutePart overrideMetaData="true">
+                        <RoutePart>
                             <TrainFileByPath path="./path/to/route-part.trn"/>
                             <TimeFix type="StartAbf" value="2023-02-01 13:50:20"/>
                             <ApplySchedule path="./path/to/a.schedule.xml"/>
@@ -177,13 +175,11 @@ mod tests {
                             parts: vec![
                                 RoutePart {
                                     source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
-                                    override_meta_data: true,
                                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
                                     apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
                                 },
                                 RoutePart {
                                     source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
-                                    override_meta_data: false,
                                     time_fix: None,
                                     apply_schedule: None,
                                 },

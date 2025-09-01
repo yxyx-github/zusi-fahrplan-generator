@@ -1,5 +1,5 @@
 use crate::core::fahrplan_generator::file_error::FileError;
-use crate::core::fahrplan_generator::generate_zug::generate_route::ResolvedRoute;
+use crate::core::fahrplan_generator::generate_zug::generate_route::ResolvedRoutePart;
 use crate::core::fahrplan_generator::helpers::read_zug;
 use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
@@ -27,7 +27,7 @@ impl From<ApplyScheduleError> for GenerateRoutePartError {
     }
 }
 
-pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Result<ResolvedRoute, GenerateRoutePartError> {
+pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Result<ResolvedRoutePart, GenerateRoutePartError> {
     let mut resolved_route_part = match route_part.source {
         RoutePartSource::TrainFileByPath { ref path } => retrieve_route_part_by_path(env, path),
         RoutePartSource::TrainConfigByNummer { .. } => todo!(),
@@ -52,20 +52,20 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
                 fahrplan_eintrag.ankunft = fahrplan_eintrag.ankunft.map(|ankunft| ankunft + time_fix_diff);
                 fahrplan_eintrag.abfahrt = fahrplan_eintrag.abfahrt.map(|abfahrt| abfahrt + time_fix_diff);
             });
+            resolved_route_part.has_time_fix = true;
         }
         Ok(resolved_route_part)
     }
 }
 
-fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoute, GenerateRoutePartError> {
+fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoutePart, GenerateRoutePartError> {
     let path = env.path_to_prejoined_zusi_path(path)
         .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (&path, error).into() })?;
     let route_template = read_zug(path.full_path())
         .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?;
-    Ok(ResolvedRoute {
-        aufgleis_fahrstrasse: route_template.value.fahrstrassen_name,
-        fahrplan_eintraege: route_template.value.fahrplan_eintraege,
-    })
+    Ok(
+        ResolvedRoutePart::new(route_template.value.fahrstrassen_name, route_template.value.fahrplan_eintraege)
+    )
 }
 
 #[cfg(test)]
@@ -127,12 +127,11 @@ mod tests {
 
         let route_part = RoutePart {
             source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
-            override_meta_data: false,
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
             apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
         };
 
-        let expected = ResolvedRoute {
+        let expected = ResolvedRoutePart {
             aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()
@@ -171,6 +170,7 @@ mod tests {
                     ])
                     .build(),
             ],
+            has_time_fix: true,
         };
 
         let resolved_route_part = generate_route_part(&env, route_part).unwrap();
