@@ -1,4 +1,4 @@
-use crate::core::fahrplan_generator::generate_zug::generate_route::ResolvedRoutePart;
+use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
