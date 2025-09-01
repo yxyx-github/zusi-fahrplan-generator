@@ -5,13 +5,9 @@ use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MergeRoutePartsError {
     /// For criteria see [can_merge]
-    RoutesDoNotFitTogether,
+    NonConsecutiveRouteParts,
     MoreThanOneTimeFix,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-/// For criteria see [can_merge]
-pub struct RoutesCanNotBeMerged;
 
 pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) -> Result<ResolvedRoutePart, MergeRoutePartsError> {
     if current.has_time_fix && new.has_time_fix {
@@ -39,7 +35,7 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
         current.fahrplan_eintraege.append(&mut new.fahrplan_eintraege);
         Ok(current)
     } else {
-        Err(MergeRoutePartsError::RoutesDoNotFitTogether)
+        Err(MergeRoutePartsError::NonConsecutiveRouteParts)
     }
 }
 
@@ -290,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cannot_merge_routes_that_do_not_fit_together() {
+    fn test_cannot_merge_non_consecutive_routes() {
         let current = ResolvedRoutePart {
             aufgleis_fahrstrasse: "X -> A".into(),
             fahrplan_eintraege: vec![
@@ -318,7 +314,7 @@ mod tests {
             has_time_fix: false,
         };
 
-        assert_eq!(merge_routes(current, new).unwrap_err(), MergeRoutePartsError::RoutesDoNotFitTogether);
+        assert_eq!(merge_routes(current, new).unwrap_err(), MergeRoutePartsError::NonConsecutiveRouteParts);
     }
 
     #[test]

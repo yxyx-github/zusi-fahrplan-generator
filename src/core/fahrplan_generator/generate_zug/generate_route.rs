@@ -91,6 +91,17 @@ mod tests {
         </Zusi>
     "#;
 
+    const EMPTY_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei/>
+                <FahrzeugVarianten/>
+            </Zug>
+        </Zusi>
+    "#;
+
     const SCHEDULE: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
         <Schedule>
@@ -182,5 +193,99 @@ mod tests {
         assert_eq!(fs::read_to_string(trn1_path).unwrap(), TRN1);
         assert_eq!(fs::read_to_string(trn2_path).unwrap(), TRN2);
         assert_eq!(fs::read_to_string(schedule_path).unwrap(), SCHEDULE);
+    }
+
+    #[test]
+    fn test_cannot_generate_route_with_non_consecutive_route_parts() {
+        let tmp_dir = tempdir().unwrap();
+
+        let trn1_path = tmp_dir.path().join("00001.trn");
+        fs::write(&trn1_path, TRN1).unwrap();
+
+        let trn2_path = tmp_dir.path().join("00002.trn");
+        fs::write(&trn2_path, TRN2).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_config = RouteConfig {
+            parts: vec![
+                RoutePart {
+                    source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    time_fix: None,
+                    apply_schedule: None,
+                },
+                RoutePart {
+                    source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    time_fix: None,
+                    apply_schedule: None,
+                },
+            ],
+        };
+
+        assert!(matches!(
+            generate_route(&env, route_config).unwrap_err(),
+            GenerateRouteError::MergeRoutePartsError { error: MergeRoutePartsError::NonConsecutiveRouteParts, .. },
+        ));
+
+        assert_eq!(fs::read_to_string(trn1_path).unwrap(), TRN1);
+        assert_eq!(fs::read_to_string(trn2_path).unwrap(), TRN2);
+    }
+
+    #[test]
+    fn test_cannot_generate_route_with_invalid_route_part() {
+        let tmp_dir = tempdir().unwrap();
+
+        let trn1_path = tmp_dir.path().join("00001.trn");
+        fs::write(&trn1_path, TRN1).unwrap();
+
+        let empty_trn_path = tmp_dir.path().join("00002.trn");
+        fs::write(&empty_trn_path, EMPTY_TRN).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_config = RouteConfig {
+            parts: vec![
+                RoutePart {
+                    source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    time_fix: None,
+                    apply_schedule: None,
+                },
+                RoutePart {
+                    source: RoutePartSource::TrainFileByPath { path: empty_trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    time_fix: None,
+                    apply_schedule: None,
+                },
+            ],
+        };
+
+        assert!(matches!(
+            generate_route(&env, route_config).unwrap_err(),
+            GenerateRouteError::GenerateRoutePartError { error: GenerateRoutePartError::EmptyRoutePart, .. },
+        ));
+
+        assert_eq!(fs::read_to_string(trn1_path).unwrap(), TRN1);
+        assert_eq!(fs::read_to_string(empty_trn_path).unwrap(), EMPTY_TRN);
+    }
+
+    #[test]
+    fn test_cannot_generate_route_with_empty_route_parts() {
+        let tmp_dir = tempdir().unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_config = RouteConfig {
+            parts: vec![],
+        };
+
+        assert_eq!(generate_route(&env, route_config).unwrap_err(), GenerateRouteError::NoRouteParts);
     }
 }
