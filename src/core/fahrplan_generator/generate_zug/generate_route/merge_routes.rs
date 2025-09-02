@@ -1,6 +1,7 @@
 use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+use crate::core::lib::helpers::delay_fahrplan_eintraege;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MergeRoutePartsError {
@@ -25,12 +26,7 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
         } else {
             (&mut new, time_diff)
         };
-        items.fahrplan_eintraege
-            .iter_mut()
-            .for_each(|eintrag| {
-                eintrag.ankunft = eintrag.ankunft.map(|ankunft| ankunft + time_diff);
-                eintrag.abfahrt = eintrag.abfahrt.map(|abfahrt| abfahrt + time_diff);
-            });
+        delay_fahrplan_eintraege(&mut items.fahrplan_eintraege, time_diff);
 
         current.fahrplan_eintraege.append(&mut new.fahrplan_eintraege);
         Ok(current)

@@ -11,9 +11,10 @@ use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::TypedZusi;
+use crate::core::copy_delay::{copy_delay, CopyDelayError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GenerateZugError {
+pub enum GenerateZugError { // TODO: zug_nummer should be available for all errors
     GenerateRouteError {
         zug_nummer: String,
         error: GenerateRouteError,
@@ -24,9 +25,18 @@ pub enum GenerateZugError {
     ApplyRollingStockError {
         error: ReplaceRollingStockError,
     },
+    CopyDelayError {
+        error: CopyDelayError,
+    },
 }
 
-pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zug_config: ZugConfig) -> Result<TypedZusi<Zug>, GenerateZugError> {
+impl From<CopyDelayError> for GenerateZugError {
+    fn from(error: CopyDelayError) -> Self {
+        GenerateZugError::CopyDelayError { error }
+    }
+}
+
+pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zug_config: ZugConfig) -> Result<Vec<TypedZusi<Zug>>, GenerateZugError> {
     let fahrplan_datei = datei_from_zusi_path(fahrplan_path.zusi_path(), true)
         .map_err(|error| GenerateZugError::AttachFahrplanFileError { error: (&zug_config.rolling_stock.path, error).into() })?;
 
@@ -48,16 +58,27 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
     let zug = replace_rolling_stock(env, zug_config.rolling_stock, zug)
         .map_err(|error| GenerateZugError::ApplyRollingStockError { error })?;
 
-    Ok(
-        TypedZusi::<Zug>::builder()
+    let mut zuege = vec![zug];
+
+    if let Some(copy_delay_config) = zug_config.copy_delay_config {
+        let mut additional = copy_delay(env, copy_delay_config, zuege.first().unwrap())?;
+        zuege.append(&mut additional);
+    }
+
+    let zuege = zuege
+        .into_iter()
+        .map(|zug| TypedZusi::<Zug>::builder()
             .info(Info::builder().datei_typ(DateiTyp::Zug).version("A.6".into()).min_version("A.6".into()).build())
             .value(zug)
-            .build()
-    )
+            .build())
+        .collect();
+
+    Ok(zuege)
 }
 
 #[cfg(test)]
 mod tests {
+    
     #[test]
     fn test_generate_zug() {
 

@@ -1,6 +1,6 @@
 use crate::core::lib::file_error::FileError;
 use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
-use crate::core::lib::helpers::read_zug;
+use crate::core::lib::helpers::{delay_fahrplan_eintraege, read_zug};
 use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RoutePartSource, RouteTimeFix, RouteTimeFixType};
@@ -48,10 +48,7 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
                 RouteTimeFixType::EndAnk => resolved_route_part.fahrplan_eintraege.last().and_then(|e| e.ankunft),
             }.map(|time| value - time)
                 .ok_or(GenerateRoutePartError::CouldNotApplyTimeFix)?;
-            resolved_route_part.fahrplan_eintraege.iter_mut().for_each(|fahrplan_eintrag| {
-                fahrplan_eintrag.ankunft = fahrplan_eintrag.ankunft.map(|ankunft| ankunft + time_fix_diff);
-                fahrplan_eintrag.abfahrt = fahrplan_eintrag.abfahrt.map(|abfahrt| abfahrt + time_fix_diff);
-            });
+            delay_fahrplan_eintraege(&mut resolved_route_part.fahrplan_eintraege, time_fix_diff);
             resolved_route_part.has_time_fix = true;
         }
         Ok(resolved_route_part)

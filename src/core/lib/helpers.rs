@@ -1,6 +1,7 @@
 use crate::core::lib::file_error::{FileError, FileErrorCause};
 use serde_helpers::xml::FromXML;
 use std::path::{Path, PathBuf};
+use time::Duration;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
@@ -8,6 +9,7 @@ use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{ZusiPath, ZusiPathError};
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi, ZusiValue};
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Fahrplan>, FileError> {
     match Zusi::from_xml_file_by_path(path.as_ref()) {
@@ -43,7 +45,14 @@ pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath
     fahrplan_path.join_to_zusi_path(format!("./{}{}.trn", zug.value.gattung, zug.value.nummer)).unwrap()
 }
 
+pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Duration) {
+    eintraege.iter_mut().for_each(|eintrag| {
+        eintrag.ankunft = eintrag.ankunft.map(|time| time + delay);
+        eintrag.abfahrt = eintrag.abfahrt.map(|time| time + delay);
+    })
+}
+
 #[cfg(test)]
 mod tests {
-
+    // TODO: test
 }

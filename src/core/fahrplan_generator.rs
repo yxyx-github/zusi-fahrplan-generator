@@ -47,7 +47,10 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
     let zuege = config.trains
         .into_iter()
         .map(|train| generate_zug(env, &generate_at, train))
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
     zuege
         .into_iter()
         .try_for_each(|zug| attach_zug(&mut fahrplan, zug, &generate_at))?;
