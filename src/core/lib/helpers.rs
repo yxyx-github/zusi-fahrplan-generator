@@ -1,4 +1,4 @@
-use crate::core::lib::file_error::{FileError, FileErrorCause};
+use crate::core::lib::file_error::{FileError, FileErrorKind};
 use serde_helpers::xml::FromXML;
 use std::path::{Path, PathBuf};
 use time::Duration;
@@ -16,7 +16,7 @@ pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZus
         Ok(zusi @ Zusi { value: ZusiValue::Fahrplan(_), .. }) => {
             Ok(zusi.try_into().unwrap())
         }
-        Ok(_) => Err((path, FileErrorCause::WrongType { expected: DateiTyp::Fahrplan }).into()),
+        Ok(_) => Err((path, FileErrorKind::WrongType { expected: DateiTyp::Fahrplan }).into()),
         Err(error) => Err((path, error).into()),
     }
 }
@@ -26,7 +26,7 @@ pub fn read_zug<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Zug
         Ok(zusi @ Zusi { value: ZusiValue::Zug(_), .. }) => {
             Ok(zusi.try_into().unwrap())
         }
-        Ok(_) => Err((path, FileErrorCause::WrongType { expected: DateiTyp::Zug }).into()),
+        Ok(_) => Err((path, FileErrorKind::WrongType { expected: DateiTyp::Zug }).into()),
         Err(error) => Err((path, error).into()),
     }
 }

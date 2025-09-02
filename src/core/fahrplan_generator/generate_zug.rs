@@ -14,9 +14,14 @@ use zusi_xml_lib::xml::zusi::TypedZusi;
 use crate::core::copy_delay::{copy_delay, CopyDelayError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GenerateZugError { // TODO: zug_nummer should be available for all errors
+pub struct GenerateZugError {
+    zug_nummer: String,
+    error: GenerateZugErrorKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GenerateZugErrorKind {
     GenerateRouteError {
-        zug_nummer: String,
         error: GenerateRouteError,
     },
     AttachFahrplanFileError {
@@ -30,25 +35,45 @@ pub enum GenerateZugError { // TODO: zug_nummer should be available for all erro
     },
 }
 
-impl From<CopyDelayError> for GenerateZugError {
+impl From<(&String, GenerateZugErrorKind)> for GenerateZugError {
+    fn from((zug_nummer, error): (&String, GenerateZugErrorKind)) -> Self {
+        Self {
+            zug_nummer: zug_nummer.into(),
+            error,
+        }
+    }
+}
+
+impl From<CopyDelayError> for GenerateZugErrorKind {
     fn from(error: CopyDelayError) -> Self {
-        GenerateZugError::CopyDelayError { error }
+        Self::CopyDelayError { error }
+    }
+}
+
+impl From<GenerateRouteError> for GenerateZugErrorKind {
+    fn from(error: GenerateRouteError) -> Self {
+        Self::GenerateRouteError { error }
+    }
+}
+
+impl From<ReplaceRollingStockError> for GenerateZugErrorKind {
+    fn from(error: ReplaceRollingStockError) -> Self {
+        Self::ApplyRollingStockError { error }
     }
 }
 
 pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zug_config: ZugConfig) -> Result<Vec<TypedZusi<Zug>>, GenerateZugError> {
+    let zug_nummer = &zug_config.nummer;
+
     let fahrplan_datei = datei_from_zusi_path(fahrplan_path.zusi_path(), true)
-        .map_err(|error| GenerateZugError::AttachFahrplanFileError { error: (&zug_config.rolling_stock.path, error).into() })?;
+        .map_err(|error| GenerateZugError::from((zug_nummer, GenerateZugErrorKind::AttachFahrplanFileError { error: (&zug_config.rolling_stock.path, error).into() })))?;
 
     let route = generate_route(env, zug_config.route)
-        .map_err(|error| GenerateZugError::GenerateRouteError {
-            zug_nummer: zug_config.nummer.clone(), // TODO: do not clone
-            error,
-        })?;
+        .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
 
     let zug = Zug::builder()
         .gattung(zug_config.gattung)
-        .nummer(zug_config.nummer)
+        .nummer(zug_nummer.to_owned()) // TODO: do not clone
         .fahrplan_datei(fahrplan_datei)
         .fahrstrassen_name(route.aufgleis_fahrstrasse)
         .fahrplan_eintraege(route.fahrplan_eintraege)
@@ -56,12 +81,13 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
         .build();
 
     let zug = replace_rolling_stock(env, zug_config.rolling_stock, zug)
-        .map_err(|error| GenerateZugError::ApplyRollingStockError { error })?;
+        .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
 
     let mut zuege = vec![zug];
 
     if let Some(copy_delay_config) = zug_config.copy_delay_config {
-        let mut additional = copy_delay(env, copy_delay_config, zuege.first().unwrap())?;
+        let mut additional = copy_delay(env, copy_delay_config, zuege.first().unwrap())
+            .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
         zuege.append(&mut additional);
     }
 

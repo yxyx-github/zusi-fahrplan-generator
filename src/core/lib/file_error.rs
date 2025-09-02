@@ -6,14 +6,14 @@ use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileError {
     pub path: PathBuf,
-    pub cause: FileErrorCause,
+    pub kind: FileErrorKind,
 }
 
-impl<P: Into<PathBuf>> From<(P, FileErrorCause)> for FileError {
-    fn from((path, error): (P, FileErrorCause)) -> Self {
+impl<P: Into<PathBuf>> From<(P, FileErrorKind)> for FileError {
+    fn from((path, error): (P, FileErrorKind)) -> Self {
         FileError {
             path: path.into(),
-            cause: error,
+            kind: error,
         }
     }
 }
@@ -23,11 +23,11 @@ impl<P: Into<PathBuf>> From<(P, ReadXMLFileError)> for FileError {
         match error {
             ReadXMLFileError::IOError(error) => FileError {
                 path: path.into(),
-                cause: FileErrorCause::IOError { error: format!("{error}") },
+                kind: FileErrorKind::IOError { error: format!("{error}") },
             },
             ReadXMLFileError::DeError(error) => FileError {
                 path: path.into(),
-                cause: FileErrorCause::FormatError { error: format!("{error}") },
+                kind: FileErrorKind::FormatError { error: format!("{error}") },
             },
         }
     }
@@ -38,11 +38,11 @@ impl<P: Into<PathBuf>> From<(P, WriteXMLFileError)> for FileError {
         match error {
             WriteXMLFileError::IOError(error) => FileError {
                 path: path.into(),
-                cause: FileErrorCause::IOError { error: format!("{error}") },
+                kind: FileErrorKind::IOError { error: format!("{error}") },
             },
             WriteXMLFileError::SeError(error) => FileError {
                 path: path.into(),
-                cause: FileErrorCause::FormatError { error: format!("{error}") },
+                kind: FileErrorKind::FormatError { error: format!("{error}") },
             },
         }
     }
@@ -52,13 +52,13 @@ impl<P: Into<PathBuf>> From<(P, ZusiPathError)> for FileError {
     fn from((path, error): (P, ZusiPathError)) -> Self {
         FileError {
             path: path.into(),
-            cause: FileErrorCause::InvalidPath { error, },
+            kind: FileErrorKind::InvalidPath { error, },
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FileErrorCause {
+pub enum FileErrorKind {
     IOError {
         error: String,
     },
@@ -73,26 +73,26 @@ pub enum FileErrorCause {
     }
 }
 
-impl From<ReadXMLFileError> for FileErrorCause {
+impl From<ReadXMLFileError> for FileErrorKind {
     fn from(error: ReadXMLFileError) -> Self {
         match error {
-            ReadXMLFileError::IOError(error) => FileErrorCause::IOError { error: format!("{error}") },
-            ReadXMLFileError::DeError(error) => FileErrorCause::FormatError { error: format!("{error}") },
+            ReadXMLFileError::IOError(error) => FileErrorKind::IOError { error: format!("{error}") },
+            ReadXMLFileError::DeError(error) => FileErrorKind::FormatError { error: format!("{error}") },
         }
     }
 }
 
-impl From<WriteXMLFileError> for FileErrorCause {
+impl From<WriteXMLFileError> for FileErrorKind {
     fn from(error: WriteXMLFileError) -> Self {
         match error {
-            WriteXMLFileError::IOError(error) => FileErrorCause::IOError { error: format!("{error}") },
-            WriteXMLFileError::SeError(error) => FileErrorCause::FormatError { error: format!("{error}") },
+            WriteXMLFileError::IOError(error) => FileErrorKind::IOError { error: format!("{error}") },
+            WriteXMLFileError::SeError(error) => FileErrorKind::FormatError { error: format!("{error}") },
         }
     }
 }
 
-impl From<ZusiPathError> for FileErrorCause {
+impl From<ZusiPathError> for FileErrorKind {
     fn from(error: ZusiPathError) -> Self {
-        FileErrorCause::InvalidPath { error }
+        FileErrorKind::InvalidPath { error }
     }
 }
