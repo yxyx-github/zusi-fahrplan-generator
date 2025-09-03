@@ -17,7 +17,7 @@ pub struct FahrplanConfig {
     pub generate_from: PathBuf,
 
     #[serde(rename = "Zug", default)]
-    pub trains: Vec<ZugConfig>,
+    pub zuege: Vec<ZugConfig>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -140,7 +140,7 @@ mod tests {
             value: FahrplanConfig {
                 generate_at: "./path/to/destination.fpn".into(),
                 generate_from: "./path/to/template.fpn".into(),
-                trains: vec![
+                zuege: vec![
                     ZugConfig {
                         nummer: "20000".into(),
                         gattung: "RB".into(),

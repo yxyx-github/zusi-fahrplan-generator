@@ -7,9 +7,9 @@ use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{ZusiPath, ZusiPathError};
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi, ZusiValue};
-use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Fahrplan>, FileError> {
     match Zusi::from_xml_file_by_path(path.as_ref()) {
@@ -42,7 +42,13 @@ pub fn datei_from_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(path: P, nur_in
 }
 
 pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath) -> PrejoinedZusiPath {
-    fahrplan_path.join_to_zusi_path(format!("./{}{}.trn", zug.value.gattung, zug.value.nummer)).unwrap()
+    PrejoinedZusiPath::new(
+        fahrplan_path.data_dir(), fahrplan_path
+        .zusi_path()
+        .get()
+        .with_extension("")
+        .join(format!("{}{}.trn", zug.value.gattung, zug.value.nummer)).try_into().unwrap()
+    )
 }
 
 pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Duration) {
@@ -54,5 +60,30 @@ pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Dur
 
 #[cfg(test)]
 mod tests {
-    // TODO: test
+    use super::*;
+    use zusi_xml_lib::xml::zusi::info::Info;
+    use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
+
+    #[test]
+    fn test_generate_zug_path() {
+        let zug = TypedZusi::<Zug>::builder()
+            .info(Info::builder().datei_typ(DateiTyp::Zug).version("A.6".into()).min_version("A.6".into()).build())
+            .value(
+                Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .gattung("RE".into())
+                    .nummer("123".into())
+                    .fahrzeug_varianten(FahrzeugVarianten::builder().build())
+                    .build()
+            )
+            .build();
+
+        let fahrplan_dir = PrejoinedZusiPath::new("to/data_dir", ZusiPath::new("the/fahrplan/dir").unwrap());
+        let fahrplan_path = PrejoinedZusiPath::new("to/data_dir", ZusiPath::new("the/fahrplan/dir.fpn").unwrap());
+
+        let expected = PrejoinedZusiPath::new("to/data_dir", ZusiPath::new("the/fahrplan/dir/RE123.trn").unwrap());
+
+        assert_eq!(generate_zug_path(&zug, &fahrplan_dir), expected);
+        assert_eq!(generate_zug_path(&zug, &fahrplan_path), expected);
+    }
 }

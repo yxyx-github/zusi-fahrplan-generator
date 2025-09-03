@@ -1,9 +1,9 @@
 mod generate_zug;
 
-use crate::core::lib::file_error::FileError;
 use crate::core::fahrplan_generator::generate_zug::{generate_zug, GenerateZugError};
-use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
 use crate::core::fahrplan_generator::GenerateFahrplanError::ReadFahrplanTemplateError;
+use crate::core::lib::file_error::FileError;
+use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::FahrplanConfig;
 use serde_helpers::xml::ToXML;
@@ -44,7 +44,7 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
     let mut fahrplan = read_fahrplan(generate_from.full_path())
         .map_err(|error| ReadFahrplanTemplateError { error })?;
 
-    let zuege = config.trains
+    let zuege = config.zuege
         .into_iter()
         .map(|train| generate_zug(env, &generate_at, train))
         .collect::<Result<Vec<_>, _>>()?
@@ -56,7 +56,7 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
         .try_for_each(|zug| attach_zug(&mut fahrplan, zug, &generate_at))?;
 
     let fahrplan: Zusi = fahrplan.into();
-    fahrplan.to_xml_file_by_path(generate_at.full_path())
+    fahrplan.to_xml_file_by_path(generate_at.full_path(), true)
         .map_err(|error| GenerateFahrplanError::WriteGeneratedFahrplanError { error: (generate_at.full_path(), error).into() })?;
 
     Ok(())
@@ -73,16 +73,311 @@ fn attach_zug(fahrplan: &mut TypedZusi<Fahrplan>, zug: TypedZusi<Zug>, fahrplan_
             )
             .build()
     );
-    zug.to_xml_file_by_path(fahrplan_path.full_path())
-        .map_err(|error| GenerateFahrplanError::AttachZugError { error: (fahrplan_path.full_path(), error).into() })?;
+    zug.to_xml_file_by_path(zug_path.full_path(), true)
+        .map_err(|error| GenerateFahrplanError::AttachZugError { error: (zug_path.full_path(), error).into() })?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource, ZugConfig};
+    use crate::input::rolling_stock_config::RollingStockConfig;
+    use serde_helpers::xml::test_utils::{cleanup_xml, read_xml_file};
+    use std::fs;
+    use std::path::PathBuf;
+    use glob::glob;
+    use tempfile::tempdir;
+    use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
+
+    const FROM_FPN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Fahrplan" Version="A.5" MinVersion="A.1"/>
+            <Fahrplan AnfangsZeit="2024-06-20 07:30:00" ChaosVorschlagen="1" trnDateien="1">
+                <BefehlsKonfiguration Dateiname="Signals\Deutschland\Befehle\408_2015.authority.xml"/>
+                <LaPDF/>
+                <StrebuPDF/>
+                <ErsatzfahrplaenePDF/>
+                <Begruessungsdatei/>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000526_005772_Hameln\Hameln_1998.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000532_005773_Behrensen\Behrensen_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000536_005774_Coppenbruegge\Coppenbruegge_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000541_005773_Voldagsen\Voldagsen_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000546_005773_Osterwald\Osterwald_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0006_0058\000551_005775_Elze\Elze_2003.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <UTM UTM_WE="566" UTM_NS="5793" UTM_Zone="32" UTM_Zone2="U"/>
+            </Fahrplan>
+        </Zusi>
+    "#;
+
+    const EXPECTED_FPN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Fahrplan" Version="A.5" MinVersion="A.1"/>
+            <Fahrplan AnfangsZeit="2024-06-20 07:30:00" ChaosVorschlagen="1" trnDateien="1">
+                <BefehlsKonfiguration Dateiname="Signals\Deutschland\Befehle\408_2015.authority.xml"/>
+                <LaPDF/>
+                <StrebuPDF/>
+                <ErsatzfahrplaenePDF/>
+                <Begruessungsdatei/>
+                <Zug>
+                    <Datei Dateiname="test/out/test/RB10001.trn"/>
+                </Zug>
+                <Zug>
+                    <Datei Dateiname="test/out/test/RB20001.trn"/>
+                </Zug>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000526_005772_Hameln\Hameln_1998.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000532_005773_Behrensen\Behrensen_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000536_005774_Coppenbruegge\Coppenbruegge_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000541_005773_Voldagsen\Voldagsen_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000546_005773_Osterwald\Osterwald_2004.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <StrModul>
+                    <Datei Dateiname="Routes\Deutschland\32U_0006_0058\000551_005775_Elze\Elze_2003.st3"/>
+                    <p/>
+                    <phi/>
+                </StrModul>
+                <UTM UTM_WE="566" UTM_NS="5793" UTM_Zone="32" UTM_Zone2="U"/>
+            </Fahrplan>
+        </Zusi>
+    "#;
+
+    const ROUTE1_TEMPLATE_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei/>
+                <FahrplanEintrag Ank="2024-06-20 08:39:00" Abf="2024-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+                    <FahrplanSignalEintrag FahrplanSignal="N1"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
+                <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrzeugVarianten/>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const ROUTE2_TEMPLATE_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei/>
+                <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrplanEintrag Betrst="Voldagsen" FplEintrag="1">
+                    <FahrplanSignalEintrag FahrplanSignal="A"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Ank="2024-06-20 08:52:10" Abf="2024-06-20 08:52:50" Signalvorlauf="160" Betrst="Voldagsen">
+                    <FahrplanSignalEintrag FahrplanSignal="N2"/>
+                </FahrplanEintrag>
+                <FahrzeugVarianten/>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const ROLLING_STOCK_TEMPLATE_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug>
+                <Datei/>
+                <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
+                    <FahrzeugInfo IDHaupt="1" IDNeben="1">
+                        <Datei Dateiname="TriebwagenA.fzg"/>
+                    </FahrzeugInfo>
+                </FahrzeugVarianten>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const EXPECTED_ROUTE1_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.6" MinVersion="A.6"/>
+            <Zug Gattung="RB" Nummer="10001" FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei Dateiname="test/out/test.fpn" NurInfo="1"/>
+                <FahrplanEintrag Ank="2024-06-20 08:39:00" Abf="2024-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+                    <FahrplanSignalEintrag FahrplanSignal="N1"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
+                <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
+                    <FahrzeugInfo IDHaupt="1" IDNeben="1">
+                        <Datei Dateiname="TriebwagenA.fzg"/>
+                    </FahrzeugInfo>
+                </FahrzeugVarianten>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const EXPECTED_ROUTE2_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.6" MinVersion="A.6"/>
+            <Zug Gattung="RB" Nummer="20001" FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                <Datei Dateiname="test/out/test.fpn" NurInfo="1"/>
+                <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrplanEintrag Betrst="Voldagsen" FplEintrag="1">
+                    <FahrplanSignalEintrag FahrplanSignal="A"/>
+                </FahrplanEintrag>
+                <FahrplanEintrag Ank="2024-06-20 08:52:10" Abf="2024-06-20 08:52:50" Signalvorlauf="160" Betrst="Voldagsen">
+                    <FahrplanSignalEintrag FahrplanSignal="N2"/>
+                </FahrplanEintrag>
+                <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
+                    <FahrzeugInfo IDHaupt="1" IDNeben="1">
+                        <Datei Dateiname="TriebwagenA.fzg"/>
+                    </FahrzeugInfo>
+                </FahrzeugVarianten>
+            </Zug>
+        </Zusi>
+    "#;
 
     #[test]
     fn test_generate_fahrplan() {
+        let tmp_dir = tempdir().unwrap();
 
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let from_fpn_path = tmp_dir.path().join("test/dev/test.fpn");
+        fs::create_dir_all(from_fpn_path.parent().unwrap()).unwrap();
+        fs::write(&from_fpn_path, FROM_FPN).unwrap();
+        let prejoined_from_fpn_path = PrejoinedZusiPath::new(&env.data_dir, ZusiPath::new_using_data_dir(&from_fpn_path, &env.data_dir).unwrap());
+
+        let at_fpn_path = tmp_dir.path().join("test/out/test.fpn");
+        let prejoined_at_fpn_path = PrejoinedZusiPath::new(&env.data_dir, ZusiPath::new_using_data_dir(&at_fpn_path, &env.data_dir).unwrap());
+
+        let route1_path = tmp_dir.path().join("test/out/test/RB10001.trn");
+        let route1_template_path = tmp_dir.path().join("test/dev/test/RB10001.trn");
+        fs::create_dir_all(route1_template_path.parent().unwrap()).unwrap();
+        fs::write(&route1_template_path, ROUTE1_TEMPLATE_TRN).unwrap();
+
+        let route2_path = tmp_dir.path().join("test/out/test/RB20001.trn");
+        let route2_template_path = tmp_dir.path().join("test/dev/test/RB20001.trn");
+        fs::create_dir_all(route2_template_path.parent().unwrap()).unwrap();
+        fs::write(&route2_template_path, ROUTE2_TEMPLATE_TRN).unwrap();
+
+        let rolling_stock_path = tmp_dir.path().join("test/dev/test/rolling-stock/Triebwagen-A.trn");
+        fs::create_dir_all(rolling_stock_path.parent().unwrap()).unwrap();
+        fs::write(&rolling_stock_path, ROLLING_STOCK_TEMPLATE_TRN).unwrap();
+
+        let config = FahrplanConfig {
+            generate_at: at_fpn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+            generate_from: from_fpn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+            zuege: vec![
+                ZugConfig {
+                    nummer: "10001".into(),
+                    gattung: "RB".into(),
+                    route: RouteConfig {
+                        parts: vec![
+                            RoutePart {
+                                source: RoutePartSource::TrainFileByPath { path: route1_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                                time_fix: None,
+                                apply_schedule: None,
+                            },
+                        ],
+                    },
+                    rolling_stock: RollingStockConfig {
+                        path: rolling_stock_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                    },
+                    copy_delay_config: None,
+                },
+                ZugConfig {
+                    nummer: "20001".into(),
+                    gattung: "RB".into(),
+                    route: RouteConfig {
+                        parts: vec![
+                            RoutePart {
+                                source: RoutePartSource::TrainFileByPath { path: route2_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                                time_fix: None,
+                                apply_schedule: None,
+                            },
+                        ],
+                    },
+                    rolling_stock: RollingStockConfig {
+                        path: rolling_stock_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                    },
+                    copy_delay_config: None,
+                },
+            ],
+        };
+
+        generate_fahrplan(&env, config).unwrap();
+
+        assert_eq!(read_xml_file(&at_fpn_path), cleanup_xml(EXPECTED_FPN.into()));
+        assert_eq!(read_xml_file(&route1_path), cleanup_xml(EXPECTED_ROUTE1_TRN.into()));
+        assert_eq!(read_xml_file(&route2_path), cleanup_xml(EXPECTED_ROUTE2_TRN.into()));
+
+        assert_eq!(fs::read_to_string(&from_fpn_path).unwrap(), FROM_FPN);
+        assert_eq!(fs::read_to_string(&route1_template_path).unwrap(), ROUTE1_TEMPLATE_TRN);
+        assert_eq!(fs::read_to_string(&route2_template_path).unwrap(), ROUTE2_TEMPLATE_TRN);
+        assert_eq!(fs::read_to_string(&rolling_stock_path).unwrap(), ROLLING_STOCK_TEMPLATE_TRN);
+
+        let all_file_paths: Vec<PathBuf> = glob(
+            tmp_dir.path().join("**/*.*").to_str().unwrap()
+        )
+            .unwrap()
+            .into_iter()
+            .map(|path|
+                path.unwrap()
+            )
+            .collect();
+
+        assert_eq!(all_file_paths, vec![
+            route1_template_path,
+            route2_template_path,
+            rolling_stock_path,
+            from_fpn_path,
+            route1_path,
+            route2_path,
+            at_fpn_path,
+        ]);
     }
 }
