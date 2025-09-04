@@ -1,11 +1,15 @@
 use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
 use std::path::PathBuf;
+use thiserror::Error;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[error("A file error occoured for {path:?}: {kind}")]
 pub struct FileError {
     pub path: PathBuf,
+
+    #[source]
     pub kind: FileErrorKind,
 }
 
@@ -57,17 +61,24 @@ impl<P: Into<PathBuf>> From<(P, ZusiPathError)> for FileError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum FileErrorKind {
+    #[error("An IO error occoured: {error}")]
     IOError {
         error: String,
     },
+
+    #[error("The format of the file content is invalid: {error}")]
     FormatError {
         error: String,
     },
+
+    #[error("The format of the file content is invalid: {expected:?}")]
     WrongType {
         expected: DateiTyp,
     },
+
+    #[error("The given path is invalid: {error}")]
     InvalidPath {
         error: ZusiPathError,
     }

@@ -7,24 +7,28 @@ use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RoutePartSource, R
 use crate::input::schedule::Schedule;
 use serde_helpers::xml::FromXML;
 use std::path::PathBuf;
+use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateRoutePartError {
+    #[error("The route part must contain at least one 'FahrplanEintrag'.")]
     EmptyRoutePart,
+
+    #[error("Couldn't apply the given schedule: {error}")]
     CouldNotApplySchedule {
+        #[from]
         error: ApplyScheduleError,
     },
+
     /// Occours if corresponding time is [None].
+    #[error("The given time fix couldn't be applied to the route part. This is likely because the selected 'FahrplanEintrag' entry doesn't contain any 'abfahrt' or 'ankunft' time.")]
     CouldNotApplyTimeFix,
+
+    #[error("The provided route source couldn't be read: {error}")]
     ReadRouteError {
+        #[source]
         error: FileError, // TODO: won't be always a FileError, e.g. if TrainConfigByNummer will be implemented
     },
-}
-
-impl From<ApplyScheduleError> for GenerateRoutePartError {
-    fn from(error: ApplyScheduleError) -> Self {
-        GenerateRoutePartError::CouldNotApplySchedule {error }
-    }
 }
 
 pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Result<ResolvedRoutePart, GenerateRoutePartError> {

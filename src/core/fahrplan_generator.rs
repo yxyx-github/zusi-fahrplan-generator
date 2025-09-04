@@ -7,23 +7,31 @@ use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fa
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::FahrplanConfig;
 use serde_helpers::xml::ToXML;
+use thiserror::Error;
 use zusi_xml_lib::xml::zusi::fahrplan::zug_datei_eintrag::ZugDateiEintrag;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
+    #[error("The given 'Fahrplan' template couldn't be read: {error}")]
     ReadFahrplanTemplateError {
         error: FileError,
     },
+
+    #[error("The generated 'Fahrplan' couldn't be written to disk: {error}")]
     WriteGeneratedFahrplanError {
         error: FileError,
     },
+
+    #[error("A 'Zug' couldn't be generated: {error}")]
     GenerateZugError {
         error: GenerateZugError,
     },
+
+    #[error("A 'Zug' couldn't be attached: {error}")]
     AttachZugError {
         error: FileError,
     },
@@ -83,10 +91,10 @@ mod tests {
     use super::*;
     use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource, ZugConfig};
     use crate::input::rolling_stock_config::RollingStockConfig;
+    use glob::glob;
     use serde_helpers::xml::test_utils::{cleanup_xml, read_xml_file};
     use std::fs;
     use std::path::PathBuf;
-    use glob::glob;
     use tempfile::tempdir;
     use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 

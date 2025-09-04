@@ -1,5 +1,6 @@
 mod generate_route;
 
+use thiserror::Error;
 use crate::core::copy_delay::{copy_delay, CopyDelayError};
 use crate::core::fahrplan_generator::generate_zug::generate_route::{generate_route, GenerateRouteError};
 use crate::core::lib::file_error::FileError;
@@ -13,24 +14,35 @@ use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::TypedZusi;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[error("Couldn't generate 'Zug' with 'Zugnummer' {zug_nummer}: {error}")]
 pub struct GenerateZugError {
     zug_nummer: String,
     error: GenerateZugErrorKind,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateZugErrorKind {
+    #[error("The route couldn't be generated: {error}")]
     GenerateRouteError {
+        #[from]
         error: GenerateRouteError,
     },
+
+    #[error("The 'Fahrplan' file couldn't be attached: {error}")]
     AttachFahrplanFileError {
         error: FileError,
     },
+
+    #[error("The rolling stock couldn't be replaced: {error}")]
     ApplyRollingStockError {
+        #[from]
         error: ReplaceRollingStockError,
     },
+
+    #[error("Couldn't copy delay the 'Zug': {error}")]
     CopyDelayError {
+        #[from]
         error: CopyDelayError,
     },
 }
@@ -41,24 +53,6 @@ impl From<(&String, GenerateZugErrorKind)> for GenerateZugError {
             zug_nummer: zug_nummer.into(),
             error,
         }
-    }
-}
-
-impl From<CopyDelayError> for GenerateZugErrorKind {
-    fn from(error: CopyDelayError) -> Self {
-        Self::CopyDelayError { error }
-    }
-}
-
-impl From<GenerateRouteError> for GenerateZugErrorKind {
-    fn from(error: GenerateRouteError) -> Self {
-        Self::GenerateRouteError { error }
-    }
-}
-
-impl From<ReplaceRollingStockError> for GenerateZugErrorKind {
-    fn from(error: ReplaceRollingStockError) -> Self {
-        Self::ApplyRollingStockError { error }
     }
 }
 

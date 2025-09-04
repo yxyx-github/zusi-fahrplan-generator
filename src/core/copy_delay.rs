@@ -6,29 +6,25 @@ use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingSt
 use crate::input::copy_delay_config::{CopyDelayConfig, CopyDelayTask};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use std::num::ParseIntError;
+use thiserror::Error;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum CopyDelayError {
+    #[error("The rolling stock couldn't be replaced: {error}")]
     ReplaceRollingStockError {
+        #[from]
         error: ReplaceRollingStockError,
     },
+
+    #[error("The 'Zugnummer' is invalid: {error}")]
     InvalidZugNummer {
+        #[from]
         error: ParseIntError,
     },
+
+    #[error("The 'Zugnummer' always must be positive. It can be decremented only if the resulting value is still positive.")]
     ZugNummerCanNotBeNegative,
-}
-
-impl From<ReplaceRollingStockError> for CopyDelayError {
-    fn from(error: ReplaceRollingStockError) -> Self {
-        CopyDelayError::ReplaceRollingStockError { error }
-    }
-}
-
-impl From<ParseIntError> for CopyDelayError {
-    fn from(error: ParseIntError) -> Self {
-        CopyDelayError::InvalidZugNummer { error }
-    }
 }
 
 pub fn copy_delay(env: &ZusiEnvironment, config: CopyDelayConfig, zug: &Zug) -> Result<Vec<Zug>, CopyDelayError> {

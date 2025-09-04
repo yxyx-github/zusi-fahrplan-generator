@@ -3,10 +3,12 @@ use crate::core::lib::helpers::read_zug;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde_helpers::default::IsDefault;
+use thiserror::Error;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ReplaceRollingStockError {
+    #[error("Couldn't read the rolling stock template file: {error}")]
     ReadRollingStockError {
         error: FileError,
     },

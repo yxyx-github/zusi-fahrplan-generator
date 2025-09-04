@@ -1,14 +1,18 @@
+use thiserror::Error;
 use crate::core::schedules::prepare_entries::prepare_entries;
 use crate::input::schedule::{Schedule, TimeFix};
 use time::{Duration, PrimitiveDateTime};
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ApplyScheduleError {
     /// occours if ankunft of FahrplanEintrag is None
+    #[error("The given stop time couldn't be applied for '{betriebsstelle}'. Does the entry have both 'Ankunft' and 'Abfahrt' set?")]
     CannotApplyStopTime {
         betriebsstelle: String,
     },
+
+    #[error("Multiple entries with time fix were found, but only one is allowed.")]
     TimeFixIsAllowedOnlyOnce,
 }
 
