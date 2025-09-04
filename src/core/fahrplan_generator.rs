@@ -96,7 +96,6 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
     use tempfile::tempdir;
-    use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 
     const FROM_FPN: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -297,10 +296,8 @@ mod tests {
         let from_fpn_path = tmp_dir.path().join("test/dev/test.fpn");
         fs::create_dir_all(from_fpn_path.parent().unwrap()).unwrap();
         fs::write(&from_fpn_path, FROM_FPN).unwrap();
-        let prejoined_from_fpn_path = PrejoinedZusiPath::new(&env.data_dir, ZusiPath::new_using_data_dir(&from_fpn_path, &env.data_dir).unwrap());
 
         let at_fpn_path = tmp_dir.path().join("test/out/test.fpn");
-        let prejoined_at_fpn_path = PrejoinedZusiPath::new(&env.data_dir, ZusiPath::new_using_data_dir(&at_fpn_path, &env.data_dir).unwrap());
 
         let route1_path = tmp_dir.path().join("test/out/test/RB10001.trn");
         let route1_template_path = tmp_dir.path().join("test/dev/test/RB10001.trn");

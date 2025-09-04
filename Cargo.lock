@@ -620,7 +620,6 @@ dependencies = [
  "clap",
  "glob",
  "quick-xml",
- "regex",
  "serde",
  "serde-helpers",
  "tempfile",
