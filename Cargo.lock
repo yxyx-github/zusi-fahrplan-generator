@@ -315,6 +315,7 @@ dependencies = [
  "quick-xml",
  "regex",
  "serde",
+ "thiserror",
  "time",
 ]
 
