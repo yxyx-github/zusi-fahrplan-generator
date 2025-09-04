@@ -2,9 +2,9 @@ pub mod generate_route_part;
 pub mod merge_routes;
 mod resolved_route;
 
-use crate::core::fahrplan_generator::generate_zug::generate_route::generate_route_part::{generate_route_part, GenerateRoutePartError};
-use crate::core::fahrplan_generator::generate_zug::generate_route::merge_routes::{merge_routes, MergeRoutePartsError};
-use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoute;
+use crate::core::generate_fahrplan::generate_zug::generate_route::generate_route_part::{generate_route_part, GenerateRoutePartError};
+use crate::core::generate_fahrplan::generate_zug::generate_route::merge_routes::{merge_routes, MergeRoutePartsError};
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoute;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{RouteConfig, RoutePartSource};
 use std::collections::VecDeque;
@@ -12,7 +12,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateRouteError {
-    #[error("The route part provided by {source:?} is invalid: {error}")]
+    #[error("The route part configuration for source {source:?} is invalid: {error}")]
     GenerateRoutePartError {
         source: RoutePartSource,
 

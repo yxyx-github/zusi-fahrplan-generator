@@ -2,7 +2,7 @@ mod generate_route;
 
 use thiserror::Error;
 use crate::core::copy_delay::{copy_delay, CopyDelayError};
-use crate::core::fahrplan_generator::generate_zug::generate_route::{generate_route, GenerateRouteError};
+use crate::core::generate_fahrplan::generate_zug::generate_route::{generate_route, GenerateRouteError};
 use crate::core::lib::file_error::FileError;
 use crate::core::lib::helpers::datei_from_zusi_path;
 use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingStockError};

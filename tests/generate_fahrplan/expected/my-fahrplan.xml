@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Fahrplan" Version="A.5" MinVersion="A.1"/>
+    <Fahrplan AnfangsZeit="2024-06-20 07:30:00" ChaosVorschlagen="1" trnDateien="1">
+        <BefehlsKonfiguration Dateiname="Signals\Deutschland\Befehle\408_2015.authority.xml"/>
+        <LaPDF/>
+        <StrebuPDF/>
+        <ErsatzfahrplaenePDF/>
+        <Begruessungsdatei/>
+        <Zug>
+            <Datei Dateiname="out/my-fahrplan/RB20000.trn"/>
+        </Zug>
+        <Zug>
+            <Datei Dateiname="out/my-fahrplan/RB20002.trn"/>
+        </Zug>
+        <Zug>
+            <Datei Dateiname="out/my-fahrplan/RB20004.trn"/>
+        </Zug>
+        <Zug>
+            <Datei Dateiname="out/my-fahrplan/RB20006.trn"/>
+        </Zug>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000526_005772_Hameln\Hameln_1998.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000532_005773_Behrensen\Behrensen_2004.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000536_005774_Coppenbruegge\Coppenbruegge_2004.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000541_005773_Voldagsen\Voldagsen_2004.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000546_005773_Osterwald\Osterwald_2004.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <StrModul>
+            <Datei Dateiname="Routes\Deutschland\32U_0006_0058\000551_005775_Elze\Elze_2003.st3"/>
+            <p/>
+            <phi/>
+        </StrModul>
+        <UTM UTM_WE="566" UTM_NS="5793" UTM_Zone="32" UTM_Zone2="U"/>
+    </Fahrplan>
+</Zusi>

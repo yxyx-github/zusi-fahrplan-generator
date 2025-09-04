@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ZusiEnvironment dataDir="../">
+    <Fahrplan generateAt="../out/my-fahrplan.fpn" generateFrom="./my-fahrplan.fpn">
+        <Zug nummer="20000" gattung="RB">
+            <Route>
+                <RoutePart>
+                    <TrainFileByPath path="./route-part-1.trn"/>
+                    <TimeFix type="StartAbf" value="2023-02-01 13:50:20"/>
+                    <ApplySchedule path="./route-part-1.schedule.xml"/>
+                </RoutePart>
+                <RoutePart>
+                    <TrainFileByPath path="./route-part-2.trn"/>
+                </RoutePart>
+            </Route>
+            <RollingStock path="./rolling-stock-a.trn"/>
+            <CopyDelay>
+                <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
+                <CopyDelayTask delay="02:00:00" count="2" increment="2">
+                    <RollingStock path="./rolling-stock-b.trn"/>
+                </CopyDelayTask>
+            </CopyDelay>
+        </Zug>
+    </Fahrplan>
+</ZusiEnvironment>

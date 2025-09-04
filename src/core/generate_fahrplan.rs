@@ -1,7 +1,7 @@
 mod generate_zug;
 
-use crate::core::fahrplan_generator::generate_zug::{generate_zug, GenerateZugError};
-use crate::core::fahrplan_generator::GenerateFahrplanError::ReadFahrplanTemplateError;
+use crate::core::generate_fahrplan::generate_zug::{generate_zug, GenerateZugError};
+use crate::core::generate_fahrplan::GenerateFahrplanError::ReadFahrplanTemplateError;
 use crate::core::lib::file_error::FileError;
 use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
@@ -45,9 +45,9 @@ impl From<GenerateZugError> for GenerateFahrplanError {
 
 pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Result<(), GenerateFahrplanError> {
     let generate_from = env.path_to_prejoined_zusi_path(&config.generate_from)
-        .map_err(|error| GenerateFahrplanError::ReadFahrplanTemplateError { error: (&config.generate_from, error).into() })?;
+        .map_err(|error| GenerateFahrplanError::ReadFahrplanTemplateError { error })?;
     let generate_at = env.path_to_prejoined_zusi_path(&config.generate_at)
-        .map_err(|error| GenerateFahrplanError::WriteGeneratedFahrplanError { error: (&config.generate_at, error).into() })?;
+        .map_err(|error| GenerateFahrplanError::WriteGeneratedFahrplanError { error })?;
 
     let mut fahrplan = read_fahrplan(generate_from.full_path())
         .map_err(|error| ReadFahrplanTemplateError { error })?;

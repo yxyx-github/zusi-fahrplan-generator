@@ -1,5 +1,5 @@
 use thiserror::Error;
-use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use crate::core::lib::helpers::delay_fahrplan_eintraege;

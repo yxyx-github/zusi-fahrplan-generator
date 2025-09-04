@@ -1,5 +1,5 @@
 use crate::core::lib::file_error::FileError;
-use crate::core::fahrplan_generator::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use crate::core::lib::helpers::{delay_fahrplan_eintraege, read_zug};
 use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
@@ -14,7 +14,7 @@ pub enum GenerateRoutePartError {
     #[error("The route part must contain at least one 'FahrplanEintrag'.")]
     EmptyRoutePart,
 
-    #[error("Couldn't apply the given schedule: {error}")]
+    #[error("Couldn't apply the given schedule:\n{error}")]
     CouldNotApplySchedule {
         #[from]
         error: ApplyScheduleError,
@@ -26,7 +26,7 @@ pub enum GenerateRoutePartError {
 
     #[error("The provided route source couldn't be read: {error}")]
     ReadRouteError {
-        #[source]
+        #[from]
         error: FileError, // TODO: won't be always a FileError, e.g. if TrainConfigByNummer will be implemented
     },
 }
@@ -40,8 +40,7 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
         Err(GenerateRoutePartError::EmptyRoutePart)
     } else {
         if let Some(ApplySchedule { path, .. }) = route_part.apply_schedule {
-            let prejoined_path = env.path_to_prejoined_zusi_path(&path)
-                .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (&path, error).into() })?;
+            let prejoined_path = env.path_to_prejoined_zusi_path(&path)?;
             let schedule = Schedule::from_xml_file_by_path(prejoined_path.full_path())
                 .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (prejoined_path.full_path(), error).into() })?;
             apply_schedule(&mut resolved_route_part.fahrplan_eintraege, &schedule)?;
@@ -60,8 +59,7 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
 }
 
 fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoutePart, GenerateRoutePartError> {
-    let path = env.path_to_prejoined_zusi_path(path)
-        .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (&path, error).into() })?;
+    let path = env.path_to_prejoined_zusi_path(path)?;
     let route_template = read_zug(path.full_path())
         .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?;
     Ok(

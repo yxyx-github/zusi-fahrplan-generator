@@ -1,5 +1,7 @@
+use std::fmt::Debug;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use crate::core::lib::file_error::FileError;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -14,8 +16,8 @@ pub struct ZusiEnvironmentConfig<T> {
 }
 
 impl<T> ZusiEnvironmentConfig<T> {
-    pub fn into_zusi_environment(self, config_dir: PathBuf) -> (ZusiEnvironment, T) {
-        ZusiEnvironment::from_zusi_environment_config(self, config_dir)
+    pub fn into_zusi_environment(self, config_path: PathBuf) -> Result<(ZusiEnvironment, T), FileError> {
+        ZusiEnvironment::from_zusi_environment_config(self, config_path)
     }
 }
 

@@ -1,3 +1,5 @@
+use std::io;
+use std::io::Error;
 use serde_helpers::xml::{ReadXMLFileError, WriteXMLFileError};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -18,6 +20,15 @@ impl<P: Into<PathBuf>> From<(P, FileErrorKind)> for FileError {
         FileError {
             path: path.into(),
             kind: error,
+        }
+    }
+}
+
+impl<P: Into<PathBuf>> From<(P, io::Error)> for FileError {
+    fn from((path, error): (P, io::Error)) -> Self {
+        FileError {
+            path: path.into(),
+            kind: FileErrorKind::IOError { error: format!("{error}") },
         }
     }
 }
@@ -81,6 +92,15 @@ pub enum FileErrorKind {
     #[error("The given path is invalid: {error}")]
     InvalidPath {
         error: ZusiPathError,
+    },
+
+    #[error("The given path must have a parent directory.")]
+    MustHaveParent,
+}
+
+impl From<io::Error> for FileErrorKind {
+    fn from(error: Error) -> Self {
+        FileErrorKind::IOError { error: format!("{error}") }
     }
 }
 

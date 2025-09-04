@@ -10,15 +10,14 @@ use zusi_xml_lib::xml::zusi::zug::Zug;
 pub enum ReplaceRollingStockError {
     #[error("Couldn't read the rolling stock template file: {error}")]
     ReadRollingStockError {
+        #[from]
         error: FileError,
     },
 }
 
 pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, mut zug: Zug) -> Result<Zug, ReplaceRollingStockError> {
-    let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&config.path)
-        .map_err(|error| ReplaceRollingStockError::ReadRollingStockError { error: (&config.path, error).into() })?;
-    let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())
-        .map_err(|error| ReplaceRollingStockError::ReadRollingStockError { error })?;
+    let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&config.path)?;
+    let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())?;
 
     zug.fahrzeug_varianten = rolling_stock_template.value.fahrzeug_varianten;
 

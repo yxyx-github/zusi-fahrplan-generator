@@ -5,11 +5,11 @@ use clap::{Args, Parser, Subcommand};
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Command,
+    pub command: CliCommand,
 }
 
 #[derive(Subcommand)]
-pub enum Command {
+pub enum CliCommand {
     GenerateFahrplan(GenerateFahrplanArgs),
 }
 

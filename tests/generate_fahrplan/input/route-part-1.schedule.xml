@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Schedule>
+    <ScheduleEntry Betriebsstelle="Elze" DrivingTime="00:02:20" StopTime="00:02:40"/>
+    <ScheduleEntry Betriebsstelle="Mehle Hp" DrivingTime="00:03:20"/>
+    <ScheduleEntry Betriebsstelle="Osterwald Hp" DrivingTime="00:03:00" StopTime="00:00:50"/>
+</Schedule>

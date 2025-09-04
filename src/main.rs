@@ -1,21 +1,21 @@
 use clap::Parser;
 use serde_helpers::xml::FromXML;
-use zusi_fahrplan_generator::cli::{Cli, Command};
-use zusi_fahrplan_generator::core::fahrplan_generator::generate_fahrplan;
+use zusi_fahrplan_generator::cli::{Cli, CliCommand};
+use zusi_fahrplan_generator::core::generate_fahrplan::generate_fahrplan;
 use zusi_fahrplan_generator::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 use zusi_fahrplan_generator::input::fahrplan_config::FahrplanConfig;
 
-fn main() {
-    fn main() {
-        let cli = Cli::parse();
+fn main() -> Result<(), String> {
+    let cli = Cli::parse();
 
-        match cli.command {
-            Command::GenerateFahrplan(args) => {
-                println!("Generate Fahrplan using config file at {:?}", args.config);
-                let config = ZusiEnvironmentConfig::<FahrplanConfig>::from_xml_file_by_path(&args.config).unwrap();
-                let (environment, fahrplan_config) = config.into_zusi_environment(args.config);
-                generate_fahrplan(&environment, fahrplan_config).unwrap_or_else(|error| eprintln!("{error}"));
-            }
-        };
+    match cli.command {
+        CliCommand::GenerateFahrplan(args) => {
+            let config_path = args.config;
+            println!("Generate Fahrplan using config file at {:?}", config_path);
+            let config = ZusiEnvironmentConfig::<FahrplanConfig>::from_xml_file_by_path(&config_path).unwrap();
+            let (environment, fahrplan_config) = config.into_zusi_environment(config_path).unwrap();
+            println!("{environment}");
+            generate_fahrplan(&environment, fahrplan_config).map_err(|error| format!("{error}"))
+        }
     }
 }
