@@ -89,12 +89,15 @@ pub enum FileErrorKind {
         expected: DateiTyp,
     },
 
-    #[error("The given path is invalid: {error}")]
+    #[error("The path is invalid: {error}")]
     InvalidPath {
         error: ZusiPathError,
     },
 
-    #[error("The given path must have a parent directory.")]
+    #[error("The path must point to a file.")]
+    MustBeFile,
+
+    #[error("The path must have a parent directory.")]
     MustHaveParent,
 }
 

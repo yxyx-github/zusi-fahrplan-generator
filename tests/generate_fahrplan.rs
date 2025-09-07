@@ -59,7 +59,7 @@ fn test_generate_fahrplan() {
     println!("{}", String::from_utf8(output.stdout).unwrap());
     println!("{}", String::from_utf8(output.stderr).unwrap());*/
 
-    // assert_eq!(read_xml_file(&at_fpn_path), read_xml_file(EXPECTED_FPN_PATH));
+    assert_eq!(read_xml_file(&at_fpn_path), read_xml_file(EXPECTED_FPN_PATH));
 
     assert_eq!(fs::read_to_string(&config_path).unwrap(), fs::read_to_string(CONFIG_PATH).unwrap());
     assert_eq!(fs::read_to_string(&fpn_tpl_path).unwrap(), fs::read_to_string(FPN_TPL_PATH).unwrap());

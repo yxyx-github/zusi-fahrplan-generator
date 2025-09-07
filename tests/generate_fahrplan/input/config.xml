@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ZusiEnvironment dataDir="../">
-    <Fahrplan generateAt="../out/my-fahrplan.fpn" generateFrom="./my-fahrplan.fpn">
+    <Fahrplan generateAt="/out/my-fahrplan.fpn" generateFrom="./my-fahrplan.fpn">
         <Zug nummer="20000" gattung="RB">
             <Route>
                 <RoutePart>

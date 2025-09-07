@@ -2,7 +2,7 @@ use std::num::{ParseIntError, TryFromIntError};
 
 const MULTI_NUMMER_SEPARATOR: &str = "_";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct ZugNummer(Vec<u32>);
 
 impl ZugNummer {

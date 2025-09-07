@@ -4,7 +4,7 @@ use thiserror::Error;
 use crate::core::copy_delay::{copy_delay, CopyDelayError};
 use crate::core::generate_fahrplan::generate_zug::generate_route::{generate_route, GenerateRouteError};
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::datei_from_zusi_path;
+use crate::core::lib::helpers::datei_from_prejoined_zusi_path;
 use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingStockError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::ZugConfig;
@@ -59,8 +59,8 @@ impl From<(&String, GenerateZugErrorKind)> for GenerateZugError {
 pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zug_config: ZugConfig) -> Result<Vec<TypedZusi<Zug>>, GenerateZugError> {
     let zug_nummer = &zug_config.nummer;
 
-    let fahrplan_datei = datei_from_zusi_path(fahrplan_path.zusi_path(), true)
-        .map_err(|error| GenerateZugError::from((zug_nummer, GenerateZugErrorKind::AttachFahrplanFileError { error: (&zug_config.rolling_stock.path, error).into() })))?;
+    let fahrplan_datei = datei_from_prejoined_zusi_path(fahrplan_path, true)
+        .map_err(|error| GenerateZugError::from((zug_nummer, GenerateZugErrorKind::AttachFahrplanFileError { error })))?;
 
     let route = generate_route(env, zug_config.route)
         .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;

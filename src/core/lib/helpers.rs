@@ -31,14 +31,20 @@ pub fn read_zug<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Zug
     }
 }
 
-pub fn datei_from_path<P: Into<PathBuf>>(path: P, nur_info: bool) -> Result<Datei, ZusiPathError> {
-    let zusi_path = path.into().try_into()?;
-
-    Ok(Datei::builder().dateiname(zusi_path).nur_info(nur_info).build())
+pub fn datei_from_path<P: Into<PathBuf>>(path: P, nur_info: bool) -> Result<Datei, FileError> {
+    let path = path.into();
+    let zusi_path = ZusiPath::try_from(path.clone()) // TODO: do not clone
+        .map_err(|error| FileError::from((path, error)))?;
+    datei_from_zusi_path(zusi_path, nur_info)
 }
 
-pub fn datei_from_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(path: P, nur_info: bool) -> Result<Datei, ZusiPathError> {
-    datei_from_path(path.as_ref().get(), nur_info)
+pub fn datei_from_prejoined_zusi_path<P: AsRef<PrejoinedZusiPath> + Into<PrejoinedZusiPath>>(path: P, nur_info: bool) -> Result<Datei, FileError> {
+    // TODO: somehow resolve "../" if possible by manually removing path components; canonicalize does not work since it is not guaranteed that the path does exist already
+    datei_from_zusi_path(path.as_ref().zusi_path(), nur_info)
+}
+
+pub fn datei_from_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(path: P, nur_info: bool) -> Result<Datei, FileError> {
+    Ok(Datei::builder().dateiname(path.into()).nur_info(nur_info).build())
 }
 
 pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath) -> PrejoinedZusiPath {

@@ -1,6 +1,4 @@
-mod zug_nummer;
-
-use crate::core::copy_delay::zug_nummer::ZugNummer;
+use crate::core::lib::zug_nummer::ZugNummer;
 use crate::core::lib::helpers::delay_fahrplan_eintraege;
 use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingStockError};
 use crate::input::copy_delay_config::{CopyDelayConfig, CopyDelayTask};

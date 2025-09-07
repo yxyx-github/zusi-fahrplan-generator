@@ -3,7 +3,7 @@ mod generate_zug;
 use crate::core::generate_fahrplan::generate_zug::{generate_zug, GenerateZugError};
 use crate::core::generate_fahrplan::GenerateFahrplanError::ReadFahrplanTemplateError;
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::{datei_from_zusi_path, generate_zug_path, read_fahrplan};
+use crate::core::lib::helpers::{datei_from_prejoined_zusi_path, generate_zug_path, read_fahrplan};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::FahrplanConfig;
 use serde_helpers::xml::ToXML;
@@ -13,6 +13,7 @@ use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
+use crate::core::lib::zug_nummer::ZugNummer;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
@@ -59,6 +60,7 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
         .into_iter()
         .flatten()
         .collect::<Vec<_>>();
+    let zuege = sort_zuege(zuege);
     zuege
         .into_iter()
         .try_for_each(|zug| attach_zug(&mut fahrplan, zug, &generate_at))?;
@@ -76,14 +78,23 @@ fn attach_zug(fahrplan: &mut TypedZusi<Fahrplan>, zug: TypedZusi<Zug>, fahrplan_
     fahrplan.value.zug_dateien.push(
         ZugDateiEintrag::builder()
             .datei(
-                datei_from_zusi_path(zug_path.zusi_path(), false)
-                .map_err(|error| GenerateFahrplanError::AttachZugError { error: (zug_path.zusi_path().get(), error).into() })?
+                datei_from_prejoined_zusi_path(&zug_path, false)
+                .map_err(|error| GenerateFahrplanError::AttachZugError { error })?
             )
             .build()
     );
     zug.to_xml_file_by_path(zug_path.full_path(), true)
         .map_err(|error| GenerateFahrplanError::AttachZugError { error: (zug_path.full_path(), error).into() })?;
     Ok(())
+}
+
+fn sort_zuege(zuege: Vec<TypedZusi<Zug>>) -> Vec<TypedZusi<Zug>> {
+    let mut zuege: Vec<(ZugNummer, TypedZusi<Zug>)> = zuege
+        .into_iter()
+        .map(|zug| (zug.value.nummer.clone().try_into().unwrap_or_default(), zug))
+        .collect();
+    zuege.sort_by(|zug1, zug2| zug1.0.cmp(&zug2.0));
+    zuege.into_iter().map(|zug| zug.1).collect()
 }
 
 #[cfg(test)]

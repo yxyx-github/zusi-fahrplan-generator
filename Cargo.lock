@@ -725,6 +725,7 @@ dependencies = [
  "quick-xml",
  "serde",
  "serde-helpers",
+ "thiserror",
  "time",
  "typed-builder",
 ]
