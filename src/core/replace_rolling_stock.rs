@@ -27,6 +27,7 @@ pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, 
     override_unset(&mut zug.bremsstellung_zug, rolling_stock_template.value.bremsstellung_zug);
     override_unset(&mut zug.fahrplan_bremsstellung_textvorgabe, rolling_stock_template.value.fahrplan_bremsstellung_textvorgabe);
     override_unset(&mut zug.tuer_system_bezeichner, rolling_stock_template.value.tuer_system_bezeichner);
+    override_unset(&mut zug.baureihe_angabe, rolling_stock_template.value.baureihe_angabe);
 
     Ok(zug)
 }
@@ -51,7 +52,7 @@ mod tests {
         <?xml version="1.0" encoding="UTF-8"?>
         <Zusi>
             <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
-            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F" MBrh="1.7" FplMasse="300" FplZuglaenge="100" TuerSystemBezeichner="TAV">
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F" MBrh="1.7" FplMasse="300" FplZuglaenge="100" TuerSystemBezeichner="TAV" BRAngabe="ET 1234">
                 <Datei/>
                 <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
                     <FahrzeugInfo IDHaupt="1" IDNeben="2" DotraModus="1">
@@ -121,6 +122,7 @@ mod tests {
             .fahrplan_zug_laenge(100.0)
             .tuer_system_bezeichner("TAV".into())
             .bremsstellung_zug(Bremsstellung::RMg)
+            .baureihe_angabe("ET 1234".into())
             .fahrzeug_varianten(
                 FahrzeugVarianten::builder()
                     .bezeichnung("default".into())
