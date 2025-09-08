@@ -14,8 +14,7 @@ pub enum ReplaceRollingStockError {
     },
 }
 
-// TODO: receive zug as &mut
-pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, mut zug: Zug) -> Result<Zug, ReplaceRollingStockError> {
+pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, zug: &mut Zug) -> Result<(), ReplaceRollingStockError> {
     let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&config.path)?;
     let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())?;
 
@@ -31,7 +30,7 @@ pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, 
     override_unset(&mut zug.grenzlast, rolling_stock_template.value.grenzlast);
     override_unset(&mut zug.speed_zug_niedriger, rolling_stock_template.value.speed_zug_niedriger);
 
-    Ok(zug)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -80,7 +79,7 @@ mod tests {
             config_dir: tmp_dir.path().to_owned(),
         };
 
-        let input = Zug::builder()
+        let mut zug = Zug::builder()
             .fahrplan_datei(Datei::builder().build())
             .mindest_bremshundertstel(1.9)
             .bremsstellung_zug(Bremsstellung::RMg)
@@ -157,7 +156,9 @@ mod tests {
             )
             .build();
 
-        assert_eq!(replace_rolling_stock(&env, config, input).unwrap(), expected);
+        replace_rolling_stock(&env, config, &mut zug).unwrap();
+
+        assert_eq!(zug, expected);
 
         assert_eq!(fs::read_to_string(rolling_stock_template_path).unwrap(), ROLLING_STOCK_TEMPLATE);
     }

@@ -36,11 +36,14 @@ pub fn copy_delay(env: &ZusiEnvironment, config: CopyDelayConfig, zug: &Zug) -> 
 }
 
 fn apply_copy_delay_task(env: &ZusiEnvironment, task: CopyDelayTask, zug: &Zug) -> Result<Vec<Zug>, CopyDelayError> {
-    let zug = zug.clone();
+    let mut zug = zug.clone();
     let zug_nummer = ZugNummer::try_from(&zug.nummer)?;
     let zug = match task.custom_rolling_stock {
         None => zug,
-        Some(replace_rolling_stock_config) => replace_rolling_stock(env, replace_rolling_stock_config, zug)?,
+        Some(replace_rolling_stock_config) => {
+            replace_rolling_stock(env, replace_rolling_stock_config, &mut zug)?;
+            zug
+        }
     };
     (1..=task.count).into_iter().try_fold(
         vec![],

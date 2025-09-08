@@ -87,7 +87,7 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
             .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
     }
 
-    let zug = replace_rolling_stock(env, zug_config.rolling_stock, zug)
+    replace_rolling_stock(env, zug_config.rolling_stock, &mut zug)
         .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
 
     let mut zuege = vec![zug];
