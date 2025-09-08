@@ -13,6 +13,7 @@ const CONFIG_PATH: &str = "./tests/generate_fahrplan/input/config.xml";
 const FPN_TPL_PATH: &str = "./tests/generate_fahrplan/input/my-fahrplan.xml";
 const ROUTE_1_TPL_PATH: &str = "./tests/generate_fahrplan/input/route-part-1.xml";
 const ROUTE_2_TPL_PATH: &str = "./tests/generate_fahrplan/input/route-part-2.xml";
+const META_DATA_TPL_PATH: &str = "./tests/generate_fahrplan/input/meta-data.xml";
 const ROLLING_STOCK_A_TPL_PATH: &str = "./tests/generate_fahrplan/input/rolling-stock-a.xml";
 const ROLLING_STOCK_B_TPL_PATH: &str = "./tests/generate_fahrplan/input/rolling-stock-b.xml";
 const ROUTE_1_2_SCHEDULE_PATH: &str = "./tests/generate_fahrplan/input/route-part-1-2.schedule.xml";
@@ -35,6 +36,10 @@ fn test_generate_fahrplan() {
     fs::create_dir_all(&fpn_tpl_path.parent().unwrap()).unwrap();
     fs::write(&fpn_tpl_path, fs::read_to_string(FPN_TPL_PATH).unwrap()).unwrap();
     fs::write(&config_path, fs::read_to_string(CONFIG_PATH).unwrap()).unwrap();
+
+    let meta_data_tpl_path = tmp_dir.path().join("data_dir/dev/meta-data.trn");
+    fs::create_dir_all(&meta_data_tpl_path.parent().unwrap()).unwrap();
+    fs::write(&meta_data_tpl_path, fs::read_to_string(META_DATA_TPL_PATH).unwrap()).unwrap();
 
     let rolling_stock_a_tpl_path = tmp_dir.path().join("data_dir/dev/rolling-stock-a.trn");
     fs::create_dir_all(&rolling_stock_a_tpl_path.parent().unwrap()).unwrap();
@@ -81,6 +86,7 @@ fn test_generate_fahrplan() {
 
     assert_eq!(fs::read_to_string(&config_path).unwrap(), fs::read_to_string(CONFIG_PATH).unwrap());
     assert_eq!(fs::read_to_string(&fpn_tpl_path).unwrap(), fs::read_to_string(FPN_TPL_PATH).unwrap());
+    assert_eq!(fs::read_to_string(&meta_data_tpl_path).unwrap(), fs::read_to_string(META_DATA_TPL_PATH).unwrap());
     assert_eq!(fs::read_to_string(&rolling_stock_a_tpl_path).unwrap(), fs::read_to_string(ROLLING_STOCK_A_TPL_PATH).unwrap());
     assert_eq!(fs::read_to_string(&rolling_stock_b_tpl_path).unwrap(), fs::read_to_string(ROLLING_STOCK_B_TPL_PATH).unwrap());
     assert_eq!(fs::read_to_string(&route_1_tpl_path).unwrap(), fs::read_to_string(ROUTE_1_TPL_PATH).unwrap());
@@ -99,6 +105,7 @@ fn test_generate_fahrplan() {
 
     assert_eq!(all_file_paths, vec![
         config_path,
+        meta_data_tpl_path,
         fpn_tpl_path,
         rolling_stock_a_tpl_path,
         rolling_stock_b_tpl_path,

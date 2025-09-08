@@ -2,6 +2,7 @@
 <ZusiEnvironment dataDir="../">
     <Fahrplan generateAt="/out/my-fahrplan.fpn" generateFrom="./my-fahrplan.fpn">
         <Zug nummer="20000" gattung="RB">
+            <MetaData path="./meta-data.trn"/>
             <Route>
                 <RoutePart>
                     <TrainFileByPath path="./route-part-1.trn"/>

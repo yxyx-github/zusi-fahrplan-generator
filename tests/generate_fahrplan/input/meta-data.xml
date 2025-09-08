@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+    <Zug Zuglauf="ADorf - BDorf" FahrplanGruppe="Gruppe AB">
+        <Datei/>
+        <FahrzeugVarianten/>
+    </Zug>
+</Zusi>
