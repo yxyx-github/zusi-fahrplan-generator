@@ -6,7 +6,7 @@ use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
-use zusi_xml_lib::xml::zusi::lib::path::zusi_path::{ZusiPath, ZusiPathError};
+use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi, ZusiValue};

@@ -4,6 +4,7 @@ use crate::core::generate_fahrplan::generate_zug::{generate_zug, GenerateZugErro
 use crate::core::generate_fahrplan::GenerateFahrplanError::ReadFahrplanTemplateError;
 use crate::core::lib::file_error::FileError;
 use crate::core::lib::helpers::{datei_from_prejoined_zusi_path, generate_zug_path, read_fahrplan};
+use crate::core::lib::zug_nummer::ZugNummer;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::FahrplanConfig;
 use serde_helpers::xml::ToXML;
@@ -13,7 +14,6 @@ use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
-use crate::core::lib::zug_nummer::ZugNummer;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum GenerateFahrplanError {
@@ -52,6 +52,8 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
 
     let mut fahrplan = read_fahrplan(generate_from.full_path())
         .map_err(|error| ReadFahrplanTemplateError { error })?;
+
+    fahrplan.value.trn_dateien = true;
 
     let zuege = config.zuege
         .into_iter()
