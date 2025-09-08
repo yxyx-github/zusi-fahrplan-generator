@@ -331,12 +331,12 @@ mod tests {
             generate_from: from_fpn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
             zuege: vec![
                 ZugConfig {
-                    nummer: "10001".into(),
+                    nummer: "20001".into(),
                     gattung: "RB".into(),
                     route: RouteConfig {
                         parts: vec![
                             RoutePart {
-                                source: RoutePartSource::TrainFileByPath { path: route1_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                                source: RoutePartSource::TrainFileByPath { path: route2_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                                 time_fix: None,
                                 apply_schedule: None,
                             },
@@ -348,12 +348,12 @@ mod tests {
                     copy_delay_config: None,
                 },
                 ZugConfig {
-                    nummer: "20001".into(),
+                    nummer: "10001".into(),
                     gattung: "RB".into(),
                     route: RouteConfig {
                         parts: vec![
                             RoutePart {
-                                source: RoutePartSource::TrainFileByPath { path: route2_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                                source: RoutePartSource::TrainFileByPath { path: route1_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                                 time_fix: None,
                                 apply_schedule: None,
                             },
