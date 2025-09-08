@@ -15,7 +15,7 @@ use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateFahrplanError {
     #[error("The given 'Fahrplan' template couldn't be read: {error}")]
     ReadFahrplanTemplateError {

@@ -1,4 +1,3 @@
-use serde_helpers::default::IsDefault;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
@@ -6,7 +5,7 @@ use serde_helpers::with::date_time::date_time_format;
 use std::path::PathBuf;
 use time::PrimitiveDateTime;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
 pub struct FahrplanConfig {
     /// Path where to place the generated .fpn file
@@ -21,7 +20,7 @@ pub struct FahrplanConfig {
     pub zuege: Vec<ZugConfig>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ZugConfig {
     #[serde(rename = "@nummer")]
@@ -31,7 +30,7 @@ pub struct ZugConfig {
     pub gattung: String,
 
     #[serde(rename = "MetaData", default, skip_serializing_if = "Option::is_none")]
-    pub meta_data: Option<ZugMetaData>,
+    pub meta_data: Option<MetaDataConfig>,
 
     #[serde(rename = "Route")]
     pub route: RouteConfig,
@@ -43,24 +42,21 @@ pub struct ZugConfig {
     pub copy_delay_config: Option<CopyDelayConfig>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct ZugMetaData {
-
-    #[serde(rename = "@zuglauf", default, skip_serializing_if = "IsDefault::is_default")]
-    pub zuglauf: String,
-
-    // TODO: add further meta data
+pub struct MetaDataConfig {
+    #[serde(rename = "@path")]
+    pub path: PathBuf,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RouteConfig {
     #[serde(rename = "$value")]
     pub parts: Vec<RoutePart>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RoutePart {
     #[serde(rename = "$value")]
@@ -73,7 +69,7 @@ pub struct RoutePart {
     pub apply_schedule: Option<ApplySchedule>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub enum RoutePartSource {
     TrainFileByPath {
@@ -86,7 +82,7 @@ pub enum RoutePartSource {
     },
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RouteTimeFix {
     #[serde(rename = "@type")]
@@ -96,14 +92,14 @@ pub struct RouteTimeFix {
     pub value: PrimitiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub enum RouteTimeFixType {
     StartAbf,
     EndAnk,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ApplySchedule {
     #[serde(rename = "@path")]
@@ -124,7 +120,7 @@ mod tests {
         <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
                 <Zug nummer="20000" gattung="RB">
-                    <MetaData zuglauf="XDorf - YDorf"/>
+                    <MetaData path="./path/to/meta-data.trn"/>
                     <Route>
                         <RoutePart>
                             <TrainFileByPath path="./path/to/route-part.trn"/>
@@ -165,8 +161,8 @@ mod tests {
                     ZugConfig {
                         nummer: "20000".into(),
                         gattung: "RB".into(),
-                        meta_data: Some(ZugMetaData {
-                            zuglauf: "XDorf - YDorf".into(),
+                        meta_data: Some(MetaDataConfig {
+                            path: "./path/to/meta-data.trn".into(),
                         }),
                         route: RouteConfig {
                             parts: vec![

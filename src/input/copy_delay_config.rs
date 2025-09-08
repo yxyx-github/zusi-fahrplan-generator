@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 use serde_helpers::with::duration::duration_format;
 use time::Duration;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "CopyDelay")]
 pub struct CopyDelayConfig {
     #[serde(rename = "CopyDelayTask")]
     pub tasks: Vec<CopyDelayTask>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CopyDelayTask {
     #[serde(rename = "@delay", with = "duration_format")]

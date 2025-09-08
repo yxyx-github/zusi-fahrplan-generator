@@ -1,8 +1,7 @@
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::read_zug;
+use crate::core::lib::helpers::{override_unset, read_zug};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::rolling_stock_config::RollingStockConfig;
-use serde_helpers::default::IsDefault;
 use thiserror::Error;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 
@@ -15,6 +14,7 @@ pub enum ReplaceRollingStockError {
     },
 }
 
+// TODO: receive zug as &mut
 pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, mut zug: Zug) -> Result<Zug, ReplaceRollingStockError> {
     let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&config.path)?;
     let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())?;
@@ -28,14 +28,10 @@ pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, 
     override_unset(&mut zug.fahrplan_bremsstellung_textvorgabe, rolling_stock_template.value.fahrplan_bremsstellung_textvorgabe);
     override_unset(&mut zug.tuer_system_bezeichner, rolling_stock_template.value.tuer_system_bezeichner);
     override_unset(&mut zug.baureihe_angabe, rolling_stock_template.value.baureihe_angabe);
+    override_unset(&mut zug.grenzlast, rolling_stock_template.value.grenzlast);
+    override_unset(&mut zug.speed_zug_niedriger, rolling_stock_template.value.speed_zug_niedriger);
 
     Ok(zug)
-}
-
-fn override_unset<T: IsDefault>(a: &mut T, b: T) {
-    if a.is_default() {
-        *a = b;
-    }
 }
 
 #[cfg(test)]
@@ -52,7 +48,7 @@ mod tests {
         <?xml version="1.0" encoding="UTF-8"?>
         <Zusi>
             <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
-            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F" MBrh="1.7" FplMasse="300" FplZuglaenge="100" TuerSystemBezeichner="TAV" BRAngabe="ET 1234">
+            <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F" MBrh="1.7" FplMasse="300" FplZuglaenge="100" TuerSystemBezeichner="TAV" BRAngabe="ET 1234" Grenzlast="1" spZugNiedriger="20">
                 <Datei/>
                 <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
                     <FahrzeugInfo IDHaupt="1" IDNeben="2" DotraModus="1">
@@ -123,6 +119,8 @@ mod tests {
             .tuer_system_bezeichner("TAV".into())
             .bremsstellung_zug(Bremsstellung::RMg)
             .baureihe_angabe("ET 1234".into())
+            .grenzlast(true)
+            .speed_zug_niedriger(20.0)
             .fahrzeug_varianten(
                 FahrzeugVarianten::builder()
                     .bezeichnung("default".into())

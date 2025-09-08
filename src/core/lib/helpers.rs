@@ -1,6 +1,7 @@
 use crate::core::lib::file_error::{FileError, FileErrorKind};
 use serde_helpers::xml::FromXML;
 use std::path::{Path, PathBuf};
+use serde_helpers::default::IsDefault;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
@@ -62,6 +63,12 @@ pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Dur
         eintrag.ankunft = eintrag.ankunft.map(|time| time + delay);
         eintrag.abfahrt = eintrag.abfahrt.map(|time| time + delay);
     })
+}
+
+pub fn override_unset<T: IsDefault>(a: &mut T, b: T) {
+    if a.is_default() {
+        *a = b;
+    }
 }
 
 #[cfg(test)]

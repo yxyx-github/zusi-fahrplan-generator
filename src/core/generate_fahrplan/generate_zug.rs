@@ -1,27 +1,29 @@
 mod generate_route;
+mod add_meta_data;
 
-use thiserror::Error;
 use crate::core::copy_delay::{copy_delay, CopyDelayError};
+use crate::core::generate_fahrplan::generate_zug::add_meta_data::{add_meta_data, AddMetaDataError};
 use crate::core::generate_fahrplan::generate_zug::generate_route::{generate_route, GenerateRouteError};
 use crate::core::lib::file_error::FileError;
 use crate::core::lib::helpers::datei_from_prejoined_zusi_path;
 use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingStockError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
-use crate::input::fahrplan_config::{ZugConfig, ZugMetaData};
+use crate::input::fahrplan_config::ZugConfig;
+use thiserror::Error;
 use zusi_xml_lib::xml::zusi::info::{DateiTyp, Info};
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::TypedZusi;
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 #[error("Couldn't generate 'Zug' with 'Zugnummer' {zug_nummer}: {error}")]
 pub struct GenerateZugError {
     zug_nummer: String,
     error: GenerateZugErrorKind,
 }
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateZugErrorKind {
     #[error("The route couldn't be generated: {error}")]
     GenerateRouteError {
@@ -34,8 +36,14 @@ pub enum GenerateZugErrorKind {
         error: FileError,
     },
 
+    #[error("The meta data couldn't be added: {error}")]
+    AddMetaDataError {
+        #[from]
+        error: AddMetaDataError,
+    },
+
     #[error("The rolling stock couldn't be replaced: {error}")]
-    ApplyRollingStockError {
+    ReplaceRollingStockError {
         #[from]
         error: ReplaceRollingStockError,
     },
@@ -75,7 +83,8 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
         .build();
 
     if let Some(meta_data) = zug_config.meta_data {
-        add_meta_data(&mut zug, meta_data)
+        add_meta_data(env, meta_data, &mut zug)
+            .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
     }
 
     let zug = replace_rolling_stock(env, zug_config.rolling_stock, zug)
@@ -100,15 +109,11 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
     Ok(zuege)
 }
 
-fn add_meta_data(zug: &mut Zug, meta_data: ZugMetaData) {
-    zug.zuglauf = meta_data.zuglauf;
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::input::copy_delay_config::{CopyDelayConfig, CopyDelayTask};
-    use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource, ZugMetaData};
+    use crate::input::fahrplan_config::{MetaDataConfig, RouteConfig, RoutePart, RoutePartSource};
     use crate::input::rolling_stock_config::RollingStockConfig;
     use std::fs;
     use tempfile::tempdir;
@@ -131,6 +136,17 @@ mod tests {
                 </FahrplanEintrag>
                 <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
                 <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                <FahrzeugVarianten/>
+            </Zug>
+        </Zusi>
+    "#;
+
+    const META_DATA_TRN: &str = r#"
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Zusi>
+            <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+            <Zug Zuglauf="ADorf - BDorf">
+                <Datei/>
                 <FahrzeugVarianten/>
             </Zug>
         </Zusi>
@@ -167,6 +183,10 @@ mod tests {
         fs::create_dir_all(route_path.parent().unwrap()).unwrap();
         fs::write(&route_path, ROUTE_TRN).unwrap();
 
+        let meta_data_path = tmp_dir.path().join("test/dev/meta-data.trn");
+        fs::create_dir_all(meta_data_path.parent().unwrap()).unwrap();
+        fs::write(&meta_data_path, META_DATA_TRN).unwrap();
+
         let rolling_stock_path = tmp_dir.path().join("test/dev/rolling-stock/Triebwagen-A.trn");
         fs::create_dir_all(rolling_stock_path.parent().unwrap()).unwrap();
         fs::write(&rolling_stock_path, ROLLING_STOCK_TRN).unwrap();
@@ -174,8 +194,8 @@ mod tests {
         let config = ZugConfig {
             nummer: "10001".into(),
             gattung: "RB".into(),
-            meta_data: Some(ZugMetaData {
-                zuglauf: "ADorf - BDorf".into(),
+            meta_data: Some(MetaDataConfig {
+                path: meta_data_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
             }),
             route: RouteConfig {
                 parts: vec![
@@ -298,6 +318,7 @@ mod tests {
         );
 
         assert_eq!(fs::read_to_string(route_path).unwrap(), ROUTE_TRN);
+        assert_eq!(fs::read_to_string(meta_data_path).unwrap(), META_DATA_TRN);
         assert_eq!(fs::read_to_string(rolling_stock_path).unwrap(), ROLLING_STOCK_TRN);
     }
 }

@@ -10,7 +10,7 @@ use crate::input::fahrplan_config::{RouteConfig, RoutePartSource};
 use std::collections::VecDeque;
 use thiserror::Error;
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateRouteError {
     #[error("The route part configuration for source {source:?} is invalid: {error}")]
     GenerateRoutePartError {
