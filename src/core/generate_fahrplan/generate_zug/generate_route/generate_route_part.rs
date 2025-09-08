@@ -1,5 +1,5 @@
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::{ResolvedRoutePart, RouteStartData};
 use crate::core::lib::file_error::FileError;
-use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use crate::core::lib::helpers::{delay_fahrplan_eintraege, read_zug};
 use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
@@ -63,7 +63,15 @@ fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<
     let route_template = read_zug(path.full_path())
         .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?;
     Ok(
-        ResolvedRoutePart::new(route_template.value.fahrstrassen_name, route_template.value.fahrplan_eintraege)
+        ResolvedRoutePart::new(
+            RouteStartData {
+                aufgleis_fahrstrasse: route_template.value.fahrstrassen_name,
+                standort_modus: route_template.value.standort_modus,
+                start_vorschubweg: route_template.value.start_vorschubweg,
+                speed_anfang: route_template.value.speed_anfang,
+            },
+            route_template.value.fahrplan_eintraege,
+        )
     )
 }
 
@@ -76,6 +84,7 @@ mod tests {
     use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+    use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
 
     const TRN: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -131,7 +140,12 @@ mod tests {
         };
 
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()
                     .ankunft(Some(datetime!(2024-06-20 08:40:00)))

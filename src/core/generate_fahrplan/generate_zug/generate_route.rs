@@ -1,6 +1,6 @@
 pub mod generate_route_part;
 pub mod merge_routes;
-mod resolved_route;
+pub mod resolved_route;
 
 use crate::core::generate_fahrplan::generate_zug::generate_route::generate_route_part::{generate_route_part, GenerateRoutePartError};
 use crate::core::generate_fahrplan::generate_zug::generate_route::merge_routes::{merge_routes, MergeRoutePartsError};
@@ -52,6 +52,7 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<Reso
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
     use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RouteTimeFix, RouteTimeFixType};
     use std::fs;
     use tempfile::tempdir;
@@ -59,6 +60,7 @@ mod tests {
     use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+    use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
 
     const TRN1: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -149,7 +151,12 @@ mod tests {
         };
 
         let expected = ResolvedRoute {
-            aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()
                     .ankunft(Some(datetime!(2024-06-20 08:40:00)))

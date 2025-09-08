@@ -15,6 +15,7 @@ use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::TypedZusi;
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::apply_resolved_route_to_zug;
 
 #[derive(Error, Debug, Clone, PartialEq)]
 #[error("Couldn't generate 'Zug' with 'Zugnummer' {zug_nummer}: {error}")]
@@ -77,10 +78,10 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
         .gattung(zug_config.gattung)
         .nummer(zug_nummer.to_owned()) // TODO: do not clone
         .fahrplan_datei(fahrplan_datei)
-        .fahrstrassen_name(route.aufgleis_fahrstrasse)
-        .fahrplan_eintraege(route.fahrplan_eintraege)
         .fahrzeug_varianten(FahrzeugVarianten::builder().build())
         .build();
+    
+    apply_resolved_route_to_zug(route, &mut zug);
 
     if let Some(meta_data) = zug_config.meta_data {
         add_meta_data(env, meta_data, &mut zug)

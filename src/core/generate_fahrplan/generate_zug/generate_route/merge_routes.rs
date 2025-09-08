@@ -1,8 +1,8 @@
-use thiserror::Error;
 use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
+use crate::core::lib::helpers::delay_fahrplan_eintraege;
+use thiserror::Error;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
-use crate::core::lib::helpers::delay_fahrplan_eintraege;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum MergeRoutePartsError {
@@ -62,13 +62,20 @@ fn get_time_diff_for_merge(first: &FahrplanEintrag, second: &FahrplanEintrag) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
     use time::macros::datetime;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
+    use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
 
     #[test]
     fn test_merge_routes_by_abfahrt() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -82,7 +89,12 @@ mod tests {
             has_time_fix: false,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
                     FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
@@ -94,7 +106,12 @@ mod tests {
             has_time_fix: false,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -116,7 +133,12 @@ mod tests {
     #[test]
     fn test_merge_routes_by_abfahrt_current_has_time_fix() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
@@ -124,7 +146,12 @@ mod tests {
             has_time_fix: true,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:48:20))).build(),
                 FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
@@ -132,7 +159,12 @@ mod tests {
             has_time_fix: false,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
@@ -147,7 +179,12 @@ mod tests {
     #[test]
     fn test_merge_routes_by_abfahrt_new_has_time_fix() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
@@ -155,7 +192,12 @@ mod tests {
             has_time_fix: false,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:48:20))).build(),
                 FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
@@ -163,7 +205,12 @@ mod tests {
             has_time_fix: true,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:38:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:48:20))).build(),
@@ -178,7 +225,12 @@ mod tests {
     #[test]
     fn test_merge_routes_by_ankunft() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:47:10))).fahrplan_signal_eintraege(vec![
@@ -192,7 +244,12 @@ mod tests {
             has_time_fix: false,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
                     FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
@@ -204,7 +261,12 @@ mod tests {
             has_time_fix: false,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:47:10))).fahrplan_signal_eintraege(vec![
@@ -226,7 +288,12 @@ mod tests {
     #[test]
     fn test_merge_routes_by_ankunft_current_has_time_fix() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:47:20))).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
@@ -234,7 +301,12 @@ mod tests {
             has_time_fix: true,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
                 FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
@@ -242,7 +314,12 @@ mod tests {
             has_time_fix: false,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:47:20))).abfahrt(Some(datetime!(2020-09-09 07:48:20))).build(),
@@ -257,7 +334,12 @@ mod tests {
     #[test]
     fn test_merge_routes_by_ankunft_new_has_time_fix() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:47:20))).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
@@ -265,7 +347,12 @@ mod tests {
             has_time_fix: false,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
                 FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
@@ -273,7 +360,12 @@ mod tests {
             has_time_fix: true,
         };
         let expected = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:40:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -288,7 +380,12 @@ mod tests {
     #[test]
     fn test_cannot_merge_non_consecutive_routes() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:47:10))).fahrplan_signal_eintraege(vec![
@@ -302,7 +399,12 @@ mod tests {
             has_time_fix: false,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
                     FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
@@ -320,14 +422,24 @@ mod tests {
     #[test]
     fn test_cannot_merge_routes_that_both_have_time_fix() {
         let current = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "X -> A".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:47:20))).build(),
             ],
             has_time_fix: true,
         };
         let new = ResolvedRoutePart {
-            aufgleis_fahrstrasse: "A -> B".into(),
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+            },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:47:20))).build(),
             ],
