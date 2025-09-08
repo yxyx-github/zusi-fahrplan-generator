@@ -7,7 +7,7 @@ use crate::core::lib::file_error::FileError;
 use crate::core::lib::helpers::datei_from_prejoined_zusi_path;
 use crate::core::replace_rolling_stock::{replace_rolling_stock, ReplaceRollingStockError};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
-use crate::input::fahrplan_config::ZugConfig;
+use crate::input::fahrplan_config::{ZugConfig, ZugMetaData};
 use zusi_xml_lib::xml::zusi::info::{DateiTyp, Info};
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
@@ -65,7 +65,7 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
     let route = generate_route(env, zug_config.route)
         .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
 
-    let zug = Zug::builder()
+    let mut zug = Zug::builder()
         .gattung(zug_config.gattung)
         .nummer(zug_nummer.to_owned()) // TODO: do not clone
         .fahrplan_datei(fahrplan_datei)
@@ -73,6 +73,10 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
         .fahrplan_eintraege(route.fahrplan_eintraege)
         .fahrzeug_varianten(FahrzeugVarianten::builder().build())
         .build();
+
+    if let Some(meta_data) = zug_config.meta_data {
+        add_meta_data(&mut zug, meta_data)
+    }
 
     let zug = replace_rolling_stock(env, zug_config.rolling_stock, zug)
         .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
@@ -96,11 +100,15 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
     Ok(zuege)
 }
 
+fn add_meta_data(zug: &mut Zug, meta_data: ZugMetaData) {
+    zug.zuglauf = meta_data.zuglauf;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::input::copy_delay_config::{CopyDelayConfig, CopyDelayTask};
-    use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource};
+    use crate::input::fahrplan_config::{RouteConfig, RoutePart, RoutePartSource, ZugMetaData};
     use crate::input::rolling_stock_config::RollingStockConfig;
     use std::fs;
     use tempfile::tempdir;
@@ -166,6 +174,9 @@ mod tests {
         let config = ZugConfig {
             nummer: "10001".into(),
             gattung: "RB".into(),
+            meta_data: Some(ZugMetaData {
+                zuglauf: "ADorf - BDorf".into(),
+            }),
             route: RouteConfig {
                 parts: vec![
                     RoutePart {
@@ -196,6 +207,7 @@ mod tests {
                 .value(Zug::builder()
                     .gattung("RB".into())
                     .nummer("10001".into())
+                    .zuglauf("ADorf - BDorf".into())
                     .fahrplan_datei(Datei::builder().dateiname(prejoined_fpn_path.zusi_path().clone()).nur_info(true).build())
                     .fahrstrassen_name("Aufgleispunkt -> Hildesheim Hbf F".into())
                     .fahrplan_eintraege(vec![
@@ -239,6 +251,7 @@ mod tests {
                 .value(Zug::builder()
                     .gattung("RB".into())
                     .nummer("10003".into())
+                    .zuglauf("ADorf - BDorf".into())
                     .fahrplan_datei(Datei::builder().dateiname(prejoined_fpn_path.zusi_path().clone()).nur_info(true).build())
                     .fahrstrassen_name("Aufgleispunkt -> Hildesheim Hbf F".into())
                     .fahrplan_eintraege(vec![

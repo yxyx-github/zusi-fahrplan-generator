@@ -1,3 +1,4 @@
+use serde_helpers::default::IsDefault;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
@@ -28,8 +29,9 @@ pub struct ZugConfig {
 
     #[serde(rename = "@gattung")]
     pub gattung: String,
-    
-    // TODO: add further meta data
+
+    #[serde(rename = "MetaData", default, skip_serializing_if = "Option::is_none")]
+    pub meta_data: Option<ZugMetaData>,
 
     #[serde(rename = "Route")]
     pub route: RouteConfig,
@@ -39,6 +41,16 @@ pub struct ZugConfig {
 
     #[serde(rename = "CopyDelay", default, skip_serializing_if = "Option::is_none")]
     pub copy_delay_config: Option<CopyDelayConfig>,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ZugMetaData {
+
+    #[serde(rename = "@zuglauf", default, skip_serializing_if = "IsDefault::is_default")]
+    pub zuglauf: String,
+
+    // TODO: add further meta data
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
@@ -112,6 +124,7 @@ mod tests {
         <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
                 <Zug nummer="20000" gattung="RB">
+                    <MetaData zuglauf="XDorf - YDorf"/>
                     <Route>
                         <RoutePart>
                             <TrainFileByPath path="./path/to/route-part.trn"/>
@@ -130,6 +143,14 @@ mod tests {
                         </CopyDelayTask>
                     </CopyDelay>
                 </Zug>
+                <Zug nummer="30000" gattung="RE">
+                    <Route>
+                        <RoutePart>
+                            <TrainFileByPath path="./path/to/route-part.trn"/>
+                        </RoutePart>
+                    </Route>
+                    <RollingStock path="./path/to/rolling-stock.trn"/>
+                </Zug>
             </Fahrplan>
         </ZusiEnvironment>
     "#;
@@ -144,6 +165,9 @@ mod tests {
                     ZugConfig {
                         nummer: "20000".into(),
                         gattung: "RB".into(),
+                        meta_data: Some(ZugMetaData {
+                            zuglauf: "XDorf - YDorf".into(),
+                        }),
                         route: RouteConfig {
                             parts: vec![
                                 RoutePart {
@@ -175,6 +199,22 @@ mod tests {
                                 },
                             ],
                         }),
+                    },
+                    ZugConfig {
+                        nummer: "30000".into(),
+                        gattung: "RE".into(),
+                        meta_data: None,
+                        route: RouteConfig {
+                            parts: vec![
+                                RoutePart {
+                                    source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
+                                    time_fix: None,
+                                    apply_schedule: None,
+                                },
+                            ],
+                        },
+                        rolling_stock: RollingStockConfig { path: "./path/to/rolling-stock.trn".into() },
+                        copy_delay_config: None,
                     },
                 ],
             },

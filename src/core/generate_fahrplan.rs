@@ -333,6 +333,7 @@ mod tests {
                 ZugConfig {
                     nummer: "20001".into(),
                     gattung: "RB".into(),
+                    meta_data: None,
                     route: RouteConfig {
                         parts: vec![
                             RoutePart {
@@ -350,6 +351,7 @@ mod tests {
                 ZugConfig {
                     nummer: "10001".into(),
                     gattung: "RB".into(),
+                    meta_data: None,
                     route: RouteConfig {
                         parts: vec![
                             RoutePart {
