@@ -40,7 +40,6 @@ pub fn datei_from_path<P: Into<PathBuf>>(path: P, nur_info: bool) -> Result<Date
 }
 
 pub fn datei_from_prejoined_zusi_path<P: AsRef<PrejoinedZusiPath> + Into<PrejoinedZusiPath>>(path: P, nur_info: bool) -> Result<Datei, FileError> {
-    // TODO: somehow resolve "../" if possible by manually removing path components; canonicalize does not work since it is not guaranteed that the path does exist already
     datei_from_zusi_path(path.as_ref().zusi_path(), nur_info)
 }
 

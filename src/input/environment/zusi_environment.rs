@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
 use crate::core::lib::file_error::{FileError, FileErrorKind};
 use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
+use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{absolute, Path, PathBuf};
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
@@ -57,7 +57,9 @@ impl ZusiEnvironment {
                 let root_path = self.config_dir.join(&path);
                 let zusi_path = ZusiPath::new_using_data_dir(&root_path, &self.data_dir)
                     .map_err(|error| FileError::from((root_path, error)))?;
-                PrejoinedZusiPath::new(&self.data_dir, zusi_path)
+                let mut prejoined_zusi_path = PrejoinedZusiPath::new(&self.data_dir, zusi_path);
+                prejoined_zusi_path.clean();
+                prejoined_zusi_path
             }
         )
     }
@@ -72,9 +74,9 @@ impl Display for ZusiEnvironment {
 
 #[cfg(test)]
 mod tests {
-    use tempfile::{tempdir, TempDir};
     use super::*;
     use crate::core::lib::file_error::FileErrorKind;
+    use tempfile::{tempdir, TempDir};
     use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 
     fn dir_path<P: AsRef<Path>>(tmp_dir: &TempDir, path: P) -> PathBuf {
@@ -213,6 +215,20 @@ mod tests {
         };
 
         let prejoined_zusi_path = env.path_to_prejoined_zusi_path("to/any/file").unwrap();
+
+        assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), "/path/to/data_dir");
+        assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), "and/then/config_dir/to/any/file");
+        assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), "/path/to/data_dir/and/then/config_dir/to/any/file");
+    }
+
+    #[test]
+    fn test_path_to_prejoined_zusi_path_config_dir_inside_data_dir_with_uncleaned_zusi_path() {
+        let env = ZusiEnvironment {
+            data_dir: "/path/to/data_dir".into(),
+            config_dir: "/path/to/data_dir/and/then/config_dir".into(),
+        };
+
+        let prejoined_zusi_path = env.path_to_prejoined_zusi_path("to//any/./unnecessary/../file").unwrap();
 
         assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), "/path/to/data_dir");
         assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), "and/then/config_dir/to/any/file");
