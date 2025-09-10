@@ -1,6 +1,6 @@
 use crate::core::lib::file_error::{FileError, FileErrorKind};
 use serde_helpers::xml::FromXML;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use serde_helpers::default::IsDefault;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
@@ -57,6 +57,10 @@ pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath
     )
 }
 
+pub fn path_to_relative<P: AsRef<Path> + Into<PathBuf>>(path: P) -> PathBuf {
+    path.as_ref().components().filter(|component| !matches!(component, Component::Prefix(_) | Component::RootDir)).collect()
+}
+
 pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Duration) {
     eintraege.iter_mut().for_each(|eintrag| {
         eintrag.ankunft = eintrag.ankunft.map(|time| time + delay);
@@ -97,5 +101,12 @@ mod tests {
 
         assert_eq!(generate_zug_path(&zug, &fahrplan_dir), expected);
         assert_eq!(generate_zug_path(&zug, &fahrplan_path), expected);
+    }
+
+    #[test]
+    fn test_path_to_relative() {
+        assert_eq!(path_to_relative("/a/b/c.d"), PathBuf::from("a/b/c.d"));
+        assert_eq!(path_to_relative("a/b/c.d"), PathBuf::from("a/b/c.d"));
+        assert_eq!(path_to_relative(r"C:\a\b\c.d"), PathBuf::from(r"a\b\c.d"));
     }
 }

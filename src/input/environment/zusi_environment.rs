@@ -5,6 +5,7 @@ use std::fs;
 use std::path::{absolute, Path, PathBuf};
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
+use crate::core::lib::helpers::path_to_relative;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ZusiEnvironment {
@@ -50,7 +51,7 @@ impl ZusiEnvironment {
             if path.as_ref().is_absolute() {
                 PrejoinedZusiPath::new(
                     &self.data_dir,
-                    ZusiPath::new(path.into().strip_prefix("/").unwrap())
+                    ZusiPath::new(path_to_relative(path))
                         .map_err(|error| FileError::from((&self.data_dir, error)))?,
                 )
             } else {
@@ -233,6 +234,34 @@ mod tests {
         assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), "/path/to/data_dir");
         assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), "and/then/config_dir/to/any/file");
         assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), "/path/to/data_dir/and/then/config_dir/to/any/file");
+    }
+
+    #[test]
+    fn test_path_to_prejoined_zusi_path_config_dir_inside_data_dir_with_windows_paths_relative_zusi_path() {
+        let env = ZusiEnvironment {
+            data_dir: r"C:\path\to\data_dir".into(),
+            config_dir: r"C:\path\to\data_dir\and\then\config_dir".into(),
+        };
+
+        let prejoined_zusi_path = env.path_to_prejoined_zusi_path(r"to\any\file").unwrap();
+
+        assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), r"C:\path\to\data_dir");
+        assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), r"and\then\config_dir\to\any\file");
+        assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), r"C:\path\to\data_dir\and\then\config_dir\to\any\file");
+    }
+
+    #[test]
+    fn test_path_to_prejoined_zusi_path_config_dir_inside_data_dir_with_windows_paths_absolute_zusi_path() {
+        let env = ZusiEnvironment {
+            data_dir: r"C:\path\to\data_dir".into(),
+            config_dir: r"C:\path\to\data_dir\and\then\config_dir".into(),
+        };
+
+        let prejoined_zusi_path = env.path_to_prejoined_zusi_path(r"C:\and\then\config_dir\to\any\file").unwrap();
+
+        assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), r"C:\path\to\data_dir");
+        assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), r"and\then\config_dir\to\any\file");
+        assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), r"C:\path\to\data_dir\and\then\config_dir\to\any\file");
     }
 
     #[test]
