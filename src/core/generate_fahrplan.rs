@@ -54,6 +54,7 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
         .map_err(|error| ReadFahrplanTemplateError { error })?;
 
     fahrplan.value.trn_dateien = true;
+    fahrplan.value.zug_dateien = vec![]; // any existing trains should be discarded
 
     let zuege = config.zuege
         .into_iter()
@@ -120,6 +121,9 @@ mod tests {
                 <StrebuPDF/>
                 <ErsatzfahrplaenePDF/>
                 <Begruessungsdatei/>
+                <Zug>
+                    <Datei Dateiname="any/train/here/is/ignored/RE3.trn"/>
+                </Zug>
                 <StrModul>
                     <Datei Dateiname="Routes\Deutschland\32U_0005_0058\000526_005772_Hameln\Hameln_1998.st3"/>
                     <p/>
