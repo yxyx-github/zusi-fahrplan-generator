@@ -7,7 +7,7 @@ use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
-#[error("A file error occoured for {path:?}: {kind}")]
+#[error(r#"A file error occoured for "{}": {kind}"#, path.display())]
 pub struct FileError {
     pub path: PathBuf,
 

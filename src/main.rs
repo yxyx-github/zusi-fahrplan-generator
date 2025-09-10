@@ -11,7 +11,7 @@ fn main() -> Result<(), String> {
     match cli.command {
         CliCommand::GenerateFahrplan(args) => {
             let config_path = args.config;
-            println!("Generate Fahrplan using config file at {:?}", config_path);
+            println!(r#"Generate Fahrplan using config file at "{}""#, config_path.display());
             let config = ZusiEnvironmentConfig::<FahrplanConfig>::from_xml_file_by_path(&config_path)
                 .map_err(|error| format!("Couldn't read the config file: {error}"))?;
             let (environment, fahrplan_config) = config.into_zusi_environment(config_path)

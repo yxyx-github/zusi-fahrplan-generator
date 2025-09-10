@@ -68,8 +68,8 @@ impl ZusiEnvironment {
 
 impl Display for ZusiEnvironment {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Zusi data dir: {:?}", self.data_dir)?;
-        writeln!(f, "Config dir: {:?}", self.config_dir)
+        writeln!(f, r#"Zusi data dir: "{}""#, self.data_dir.display())?;
+        writeln!(f, r#"Config dir: "{}""#, self.config_dir.display())
     }
 }
 
