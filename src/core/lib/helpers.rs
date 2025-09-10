@@ -107,6 +107,7 @@ mod tests {
     fn test_path_to_relative() {
         assert_eq!(path_to_relative("/a/b/c.d"), PathBuf::from("a/b/c.d"));
         assert_eq!(path_to_relative("a/b/c.d"), PathBuf::from("a/b/c.d"));
+        #[cfg(target_os = "windows")]
         assert_eq!(path_to_relative(r"C:\a\b\c.d"), PathBuf::from(r"a\b\c.d"));
     }
 }

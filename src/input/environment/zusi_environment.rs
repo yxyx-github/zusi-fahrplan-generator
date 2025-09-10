@@ -236,6 +236,7 @@ mod tests {
         assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), "/path/to/data_dir/and/then/config_dir/to/any/file");
     }
 
+    #[cfg(target_os = "windows")]
     #[test]
     fn test_path_to_prejoined_zusi_path_config_dir_inside_data_dir_with_windows_paths_relative_zusi_path() {
         let env = ZusiEnvironment {
@@ -250,6 +251,7 @@ mod tests {
         assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), r"C:\path\to\data_dir\and\then\config_dir\to\any\file");
     }
 
+    #[cfg(target_os = "windows")]
     #[test]
     fn test_path_to_prejoined_zusi_path_config_dir_inside_data_dir_with_windows_paths_absolute_zusi_path() {
         let env = ZusiEnvironment {
