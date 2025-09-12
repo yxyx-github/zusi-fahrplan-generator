@@ -33,8 +33,8 @@ pub enum GenerateRouteError {
 pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<ResolvedRoute, GenerateRouteError> {
     let mut resolved_route_parts = config.parts
         .into_iter()
-        .map(|part| generate_route_part(env, part.clone())
-            .map_err(|error| GenerateRouteError::GenerateRoutePartError { // TODO: do not clone
+        .map(|part| generate_route_part(env, part.clone()) // TODO: do not clone
+            .map_err(|error| GenerateRouteError::GenerateRoutePartError {
                 source: part.source,
                 error,
             })

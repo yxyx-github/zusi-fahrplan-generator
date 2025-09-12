@@ -66,36 +66,35 @@ impl From<(&String, GenerateZugErrorKind)> for GenerateZugError {
 }
 
 pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zug_config: ZugConfig) -> Result<Vec<TypedZusi<Zug>>, GenerateZugError> {
-    let zug_nummer = &zug_config.nummer;
-
     let fahrplan_datei = datei_from_prejoined_zusi_path(fahrplan_path, true)
-        .map_err(|error| GenerateZugError::from((zug_nummer, GenerateZugErrorKind::AttachFahrplanFileError { error })))?;
-
-    let route = generate_route(env, zug_config.route)
-        .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
+        .map_err(|error| GenerateZugError::from((&zug_config.nummer, GenerateZugErrorKind::AttachFahrplanFileError { error })))?;
 
     let mut zug = Zug::builder()
         .gattung(zug_config.gattung)
-        .nummer(zug_nummer.to_owned()) // TODO: do not clone
+        .nummer(zug_config.nummer)
         .fahrplan_datei(fahrplan_datei)
         .fahrzeug_varianten(FahrzeugVarianten::builder().build())
         .build();
+
+    let route = generate_route(env, zug_config.route)
+        .map_err(|error| GenerateZugError::from((&zug.nummer, error.into())))?;
     
     apply_resolved_route_to_zug(route, &mut zug);
 
     if let Some(meta_data) = zug_config.meta_data {
         add_meta_data(env, meta_data, &mut zug)
-            .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
+            .map_err(|error| GenerateZugError::from((&zug.nummer, error.into())))?;
     }
 
     replace_rolling_stock(env, zug_config.rolling_stock, &mut zug)
-        .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
+        .map_err(|error| GenerateZugError::from((&zug.nummer, error.into())))?;
 
     let mut zuege = vec![zug];
 
     if let Some(copy_delay_config) = zug_config.copy_delay_config {
-        let mut additional = copy_delay(env, copy_delay_config, zuege.first().unwrap())
-            .map_err(|error| GenerateZugError::from((zug_nummer, error.into())))?;
+        let first_zug = zuege.first().unwrap();
+        let mut additional = copy_delay(env, copy_delay_config, first_zug)
+            .map_err(|error| GenerateZugError::from((&first_zug.nummer, error.into())))?;
         zuege.append(&mut additional);
     }
 
