@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Zug" Version="A.6" MinVersion="A.6"/>
+    <Zug Gattung="RB" Nummer="2" Zuglauf="ADorf - BDorf" FahrplanGruppe="Gruppe AB" FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+        <Datei Dateiname="out/my-fahrplan.fpn" NurInfo="1"/>
+        <FahrplanEintrag Ank="2023-06-20 09:39:00" Abf="2023-06-20 09:42:40" Signalvorlauf="180" Betrst="Elze">
+            <FahrplanSignalEintrag FahrplanSignal="N1"/>
+        </FahrplanEintrag>
+        <FahrplanEintrag Abf="2023-06-20 09:47:00" Betrst="Mehle Hp"/>
+        <FahrplanEintrag Ank="2023-06-20 09:50:00" Abf="2023-06-20 09:50:50" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+        <FahrplanEintrag Betrst="Voldagsen" FplEintrag="1">
+            <FahrplanSignalEintrag FahrplanSignal="A"/>
+        </FahrplanEintrag>
+        <FahrplanEintrag Ank="2023-06-20 09:54:20" Abf="2023-06-20 09:55:00" Signalvorlauf="160" Betrst="Voldagsen">
+            <FahrplanSignalEintrag FahrplanSignal="N2"/>
+        </FahrplanEintrag>
+        <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
+            <FahrzeugInfo IDHaupt="1" IDNeben="1">
+                <Datei Dateiname="TriebwagenB.fzg"/>
+            </FahrzeugInfo>
+        </FahrzeugVarianten>
+    </Zug>
+</Zusi>
