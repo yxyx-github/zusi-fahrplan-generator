@@ -53,8 +53,10 @@ pub fn generate_fahrplan(env: &ZusiEnvironment, config: FahrplanConfig) -> Resul
     let mut fahrplan = read_fahrplan(generate_from.full_path())
         .map_err(|error| ReadFahrplanTemplateError { error })?;
 
+    // any existing trains should be discarded
     fahrplan.value.trn_dateien = true;
-    fahrplan.value.zug_dateien = vec![]; // any existing trains should be discarded
+    fahrplan.value.zug_dateien = vec![];
+    fahrplan.value.zug_eintraege = vec![];
 
     let zuege = config.zuege
         .into_iter()
