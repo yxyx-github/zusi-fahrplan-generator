@@ -16,6 +16,7 @@ pub enum CliCommand {
     Schedule(CliScheduleCommand),
 }
 
+/// Actions related to schedules
 #[derive(Subcommand)]
 pub enum CliScheduleCommand {
     Apply(ApplyScheduleArgs),
