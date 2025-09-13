@@ -1,5 +1,5 @@
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::{override_unset, read_zug};
+use crate::core::lib::helpers::{override_default, read_zug};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::MetaDataConfig;
 use thiserror::Error;
@@ -17,24 +17,25 @@ pub enum AddMetaDataError {
 pub fn add_meta_data(env: &ZusiEnvironment, config: MetaDataConfig, zug: &mut Zug) -> Result<(), AddMetaDataError> {
     let path = env.path_to_prejoined_zusi_path(config.path)?;
     let meta_data_template = read_zug(path.full_path())?;
-    override_unset(&mut zug.zuglauf, meta_data_template.value.zuglauf);
-    override_unset(&mut zug.prioritaet, meta_data_template.value.prioritaet);
-    override_unset(&mut zug.energie_vorgabe, meta_data_template.value.energie_vorgabe);
-    override_unset(&mut zug.verkehrstage, meta_data_template.value.verkehrstage);
-    override_unset(&mut zug.speed_zug_niedriger, meta_data_template.value.speed_zug_niedriger);
-    override_unset(&mut zug.autopilot_beschleunigung, meta_data_template.value.autopilot_beschleunigung);
-    override_unset(&mut zug.keine_vorplan_korrektur, meta_data_template.value.keine_vorplan_korrektur);
-    override_unset(&mut zug.dekozug, meta_data_template.value.dekozug);
-    override_unset(&mut zug.lod_zug, meta_data_template.value.lod_zug);
-    override_unset(&mut zug.reisenden_dichte, meta_data_template.value.reisenden_dichte);
-    override_unset(&mut zug.fahrplan_gruppe, meta_data_template.value.fahrplan_gruppe);
-    override_unset(&mut zug.rekursionstiefe, meta_data_template.value.rekursionstiefe);
-    override_unset(&mut zug.zugsicherung_startmodus, meta_data_template.value.zugsicherung_startmodus);
-    override_unset(&mut zug.cold_movement, meta_data_template.value.cold_movement);
-    override_unset(&mut zug.zug_typ, meta_data_template.value.zug_typ);
-    override_unset(&mut zug.ueberschrift, meta_data_template.value.ueberschrift);
-    override_unset(&mut zug.buchfahrplan_einfach, meta_data_template.value.buchfahrplan_einfach);
-    override_unset(&mut zug.buchfahrplan_dll, meta_data_template.value.buchfahrplan_dll);
+    override_default(&mut zug.zuglauf, meta_data_template.value.zuglauf);
+    override_default(&mut zug.prioritaet, meta_data_template.value.prioritaet);
+    override_default(&mut zug.energie_vorgabe, meta_data_template.value.energie_vorgabe);
+    override_default(&mut zug.mindest_bremshundertstel, meta_data_template.value.mindest_bremshundertstel);
+    override_default(&mut zug.verkehrstage, meta_data_template.value.verkehrstage);
+    override_default(&mut zug.speed_zug_niedriger, meta_data_template.value.speed_zug_niedriger);
+    override_default(&mut zug.autopilot_beschleunigung, meta_data_template.value.autopilot_beschleunigung);
+    override_default(&mut zug.keine_vorplan_korrektur, meta_data_template.value.keine_vorplan_korrektur);
+    override_default(&mut zug.dekozug, meta_data_template.value.dekozug);
+    override_default(&mut zug.lod_zug, meta_data_template.value.lod_zug);
+    override_default(&mut zug.reisenden_dichte, meta_data_template.value.reisenden_dichte);
+    override_default(&mut zug.fahrplan_gruppe, meta_data_template.value.fahrplan_gruppe);
+    override_default(&mut zug.rekursionstiefe, meta_data_template.value.rekursionstiefe);
+    override_default(&mut zug.zugsicherung_startmodus, meta_data_template.value.zugsicherung_startmodus);
+    override_default(&mut zug.cold_movement, meta_data_template.value.cold_movement);
+    override_default(&mut zug.zug_typ, meta_data_template.value.zug_typ);
+    override_default(&mut zug.ueberschrift, meta_data_template.value.ueberschrift);
+    override_default(&mut zug.buchfahrplan_einfach, meta_data_template.value.buchfahrplan_einfach);
+    override_default(&mut zug.buchfahrplan_dll, meta_data_template.value.buchfahrplan_dll);
     Ok(())
 }
 

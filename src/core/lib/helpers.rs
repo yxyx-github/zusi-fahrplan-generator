@@ -68,8 +68,14 @@ pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Dur
     })
 }
 
-pub fn override_unset<T: IsDefault>(a: &mut T, b: T) {
+pub fn override_default<T: IsDefault>(a: &mut T, b: T) {
     if a.is_default() {
+        *a = b;
+    }
+}
+
+pub fn override_with_non_default<T: IsDefault>(a: &mut T, b: T) {
+    if !b.is_default() {
         *a = b;
     }
 }

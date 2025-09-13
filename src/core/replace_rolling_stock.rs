@@ -1,5 +1,5 @@
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::{override_unset, read_zug};
+use crate::core::lib::helpers::{override_default, override_with_non_default, read_zug};
 use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use thiserror::Error;
@@ -19,16 +19,16 @@ pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, 
     let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())?;
 
     zug.fahrzeug_varianten = rolling_stock_template.value.fahrzeug_varianten;
+    override_with_non_default(&mut zug.bremsstellung_zug, rolling_stock_template.value.bremsstellung_zug);
 
-    override_unset(&mut zug.mindest_bremshundertstel, rolling_stock_template.value.mindest_bremshundertstel);
-    override_unset(&mut zug.fahrplan_zug_laenge, rolling_stock_template.value.fahrplan_zug_laenge);
-    override_unset(&mut zug.fahrplan_masse, rolling_stock_template.value.fahrplan_masse);
-    override_unset(&mut zug.bremsstellung_zug, rolling_stock_template.value.bremsstellung_zug);
-    override_unset(&mut zug.fahrplan_bremsstellung_textvorgabe, rolling_stock_template.value.fahrplan_bremsstellung_textvorgabe);
-    override_unset(&mut zug.tuer_system_bezeichner, rolling_stock_template.value.tuer_system_bezeichner);
-    override_unset(&mut zug.baureihe_angabe, rolling_stock_template.value.baureihe_angabe);
-    override_unset(&mut zug.grenzlast, rolling_stock_template.value.grenzlast);
-    override_unset(&mut zug.speed_zug_niedriger, rolling_stock_template.value.speed_zug_niedriger);
+    override_default(&mut zug.mindest_bremshundertstel, rolling_stock_template.value.mindest_bremshundertstel);
+    override_default(&mut zug.fahrplan_zug_laenge, rolling_stock_template.value.fahrplan_zug_laenge);
+    override_default(&mut zug.fahrplan_masse, rolling_stock_template.value.fahrplan_masse);
+    override_default(&mut zug.fahrplan_bremsstellung_textvorgabe, rolling_stock_template.value.fahrplan_bremsstellung_textvorgabe);
+    override_default(&mut zug.tuer_system_bezeichner, rolling_stock_template.value.tuer_system_bezeichner);
+    override_default(&mut zug.baureihe_angabe, rolling_stock_template.value.baureihe_angabe);
+    override_default(&mut zug.grenzlast, rolling_stock_template.value.grenzlast);
+    override_default(&mut zug.speed_zug_niedriger, rolling_stock_template.value.speed_zug_niedriger);
 
     Ok(())
 }
