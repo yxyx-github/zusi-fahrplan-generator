@@ -35,7 +35,7 @@ fn main() -> Result<(), String> {
             trn_file_paths
                 .into_iter()
                 .for_each(|trn_file_path| {
-                    apply_schedule_to_file(&schedule, &trn_file_path)
+                    apply_schedule_to_file(&schedule, &trn_file_path) // TODO: update_buchfahrplan if BuchfahrplanDatei is present
                         .unwrap_or_else(|error| eprintln!(r#"Error occoured for "{}": {error}"#, trn_file_path.display()));
                 });
             Ok(())

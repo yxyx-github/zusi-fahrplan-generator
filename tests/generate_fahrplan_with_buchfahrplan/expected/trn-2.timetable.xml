@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Buchfahrplan" Version="A.4" MinVersion="A.4"/>
+    <Buchfahrplan Gattung="RB" Nummer="20002" Zuglauf="ADorf - BDorf" spMax="10" MBrh="1.6" BremsstellungZug="2">
+        <Datei_fpn Dateiname="out/my-fahrplan.fpn" NurInfo="1"/>
+        <Datei_trn Dateiname="out/my-fahrplan/RB20002.trn" NurInfo="1"/>
+        <UTM UTM_WE="566" UTM_NS="5793" UTM_Zone="32" UTM_Zone2="U"/>
+        <FplZeile FplLaufweg="20092.018">
+            <Fplkm km="32.8757" />
+            <FplName FplNameText="Elze" />
+            <FplAnk Ank="2023-06-20 10:39:00" />
+            <FplAbf Abf="2023-06-20 10:41:40" />
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="21799.445">
+            <FplvMax vMax="33.3333"/>
+            <Fplkm km="1.7792"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="24631.027">
+            <Fplkm km="4.5357"/>
+            <FplName FplNameText="Mehle Hp"/>
+            <FplAbf Abf="2023-06-20 10:45:00"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="29134.139">
+            <Fplkm km="9.0405"/>
+            <FplName FplNameText="Osterwald Hp"/>
+            <FplAnk Ank="2023-06-20 10:48:00"/>
+            <FplAbf Abf="2023-06-20 10:48:50"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="32220.396">
+            <Fplkm km="12.128"/>
+            <FplSignaltyp FplSignaltypNr="7"/>
+            <FplNameRechts FplNameText="E 60"/>
+        </FplZeile>
+        <FplZeile FplLaufweg="32660.822">
+            <FplvMax vMax="33.3333"/>
+            <Fplkm km="12.5721"/>
+        </FplZeile>
+        <FplZeile FplLaufweg="32883.34">
+            <Fplkm km="12.7907"/>
+            <FplName FplNameText="Voldagsen"/>
+            <FplAnk Ank="2023-06-20 10:52:20"/>
+            <FplAbf Abf="2023-06-20 10:53:00"/>
+        </FplZeile>
+    </Buchfahrplan>
+</Zusi>

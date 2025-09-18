@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Buchfahrplan" Version="A.7" MinVersion="A.0"/>
+    <Buchfahrplan Gattung="RB" Nummer="00002" MBrh="1.3">
+        <Datei_fpn/>
+        <Datei_trn/>
+        <UTM UTM_WE="999" UTM_NS="9999" UTM_Zone="32" UTM_Zone2="U"/>
+        <FplZeile FplRglGgl="1" FplLaufweg="29134.139">
+            <Fplkm km="9.0405"/>
+            <FplName FplNameText="Osterwald Hp"/>
+            <FplAnk Ank="2024-06-20 08:48:00"/>
+            <FplAbf Abf="2024-06-20 08:48:40"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="32220.396">
+            <Fplkm km="12.128"/>
+            <FplSignaltyp FplSignaltypNr="7"/>
+            <FplNameRechts FplNameText="E 60"/>
+        </FplZeile>
+        <FplZeile FplLaufweg="32660.822">
+            <FplvMax vMax="33.3333"/>
+            <Fplkm km="12.5721"/>
+        </FplZeile>
+        <FplZeile FplLaufweg="32883.34">
+            <Fplkm km="12.7907"/>
+            <FplName FplNameText="Voldagsen"/>
+            <FplAnk Ank="2024-06-20 08:52:10"/>
+            <FplAbf Abf="2024-06-20 08:52:50"/>
+        </FplZeile>
+    </Buchfahrplan>
+</Zusi>

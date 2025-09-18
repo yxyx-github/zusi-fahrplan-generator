@@ -1,8 +1,10 @@
 use crate::core::lib::file_error::{FileError, FileErrorKind};
+use serde_helpers::default::IsDefault;
 use serde_helpers::xml::FromXML;
 use std::path::{Component, Path, PathBuf};
-use serde_helpers::default::IsDefault;
 use time::Duration;
+use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
+use zusi_xml_lib::xml::zusi::buchfahrplan::Buchfahrplan;
 use zusi_xml_lib::xml::zusi::fahrplan::Fahrplan;
 use zusi_xml_lib::xml::zusi::info::DateiTyp;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
@@ -11,6 +13,7 @@ use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi, ZusiValue};
+use zusi_xml_lib::xml::zusi::lib::utm::UTM;
 
 pub fn read_fahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Fahrplan>, FileError> {
     match Zusi::from_xml_file_by_path(path.as_ref()) {
@@ -28,6 +31,16 @@ pub fn read_zug<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Zug
             Ok(zusi.try_into().unwrap())
         }
         Ok(_) => Err((path, FileErrorKind::WrongType { expected: DateiTyp::Zug }).into()),
+        Err(error) => Err((path, error).into()),
+    }
+}
+
+pub fn read_buchfahrplan<P: AsRef<Path> + Into<PathBuf>>(path: P) -> Result<TypedZusi<Buchfahrplan>, FileError> {
+    match Zusi::from_xml_file_by_path(path.as_ref()) {
+        Ok(zusi @ Zusi { value: ZusiValue::Buchfahrplan(_), .. }) => {
+            Ok(zusi.try_into().unwrap())
+        }
+        Ok(_) => Err((path, FileErrorKind::WrongType { expected: DateiTyp::Buchfahrplan }).into()),
         Err(error) => Err((path, error).into()),
     }
 }
@@ -57,6 +70,16 @@ pub fn generate_zug_path(zug: &TypedZusi<Zug>, fahrplan_path: &PrejoinedZusiPath
     )
 }
 
+pub fn generate_buchfahrplan_path(buchfahrplan: &TypedZusi<Buchfahrplan>, fahrplan_path: &PrejoinedZusiPath) -> PrejoinedZusiPath {
+    PrejoinedZusiPath::new(
+        fahrplan_path.data_dir(), fahrplan_path
+        .zusi_path()
+        .get()
+        .with_extension("")
+        .join(format!("{}{}.timetable.xml", buchfahrplan.value.gattung, buchfahrplan.value.nummer)).try_into().unwrap()
+    )
+}
+
 pub fn path_to_relative<P: AsRef<Path> + Into<PathBuf>>(path: P) -> PathBuf {
     path.as_ref().components().filter(|component| !matches!(component, Component::Prefix(_) | Component::RootDir)).collect()
 }
@@ -68,8 +91,25 @@ pub fn delay_fahrplan_eintraege(eintraege: &mut Vec<FahrplanEintrag>, delay: Dur
     })
 }
 
+pub fn delay_fahrplan_zeilen(zeilen: &mut Vec<FahrplanZeile>, delay: Duration) {
+    zeilen.iter_mut().for_each(|zeile| {
+        if let Some(time) = &mut zeile.fahrplan_ankunft {
+            time.ankunft = time.ankunft + delay;
+        }
+        if let Some(time) = &mut zeile.fahrplan_abfahrt {
+            time.abfahrt = time.abfahrt + delay;
+        }
+    })
+}
+
 pub fn override_default<T: IsDefault>(a: &mut T, b: T) {
     if a.is_default() {
+        *a = b;
+    }
+}
+
+pub fn override_non_default<T: IsDefault>(a: &mut T, b: T) {
+    if !a.is_default() {
         *a = b;
     }
 }
@@ -78,6 +118,21 @@ pub fn override_with_non_default<T: IsDefault>(a: &mut T, b: T) {
     if !b.is_default() {
         *a = b;
     }
+}
+
+pub fn empty_buchfahrplan() -> Buchfahrplan {
+    Buchfahrplan::builder()
+        .datei_trn(Datei::builder().build())
+        .datei_fpn(Datei::builder().build())
+        .utm(UTM::builder().build())
+        .build()
+}
+
+pub fn empty_buchfahrplan_with_gattung_and_nummer(gattung: String, nummer: String) -> Buchfahrplan {
+    let mut buchfahrplan = empty_buchfahrplan();
+    buchfahrplan.gattung = gattung;
+    buchfahrplan.nummer = nummer;
+    buchfahrplan
 }
 
 #[cfg(test)]

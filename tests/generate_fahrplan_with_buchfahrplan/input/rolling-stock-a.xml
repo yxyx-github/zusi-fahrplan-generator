@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+    <Zug>
+        <Datei/>
+        <BuchfahrplanRohDatei Dateiname="dev/rolling-stock-a.timetable.xml"/>
+        <FahrzeugVarianten Bezeichnung="default" ZufallsWert="1">
+            <FahrzeugInfo IDHaupt="1" IDNeben="1">
+                <Datei Dateiname="TriebwagenA.fzg"/>
+            </FahrzeugInfo>
+        </FahrzeugVarianten>
+    </Zug>
+</Zusi>

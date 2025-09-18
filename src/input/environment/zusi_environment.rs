@@ -64,6 +64,13 @@ impl ZusiEnvironment {
             }
         )
     }
+
+    pub fn zusi_path_to_prejoined_zusi_path<P: AsRef<ZusiPath> + Into<ZusiPath>>(&self, zusi_path: P) -> PrejoinedZusiPath {
+        PrejoinedZusiPath::new(
+            &self.data_dir,
+            zusi_path.into(),
+        )
+    }
 }
 
 impl Display for ZusiEnvironment {
@@ -310,5 +317,19 @@ mod tests {
                 kind: FileErrorKind::InvalidPath { error: ZusiPathError::PathDoesNotContainDataDir },
             },
         );
+    }
+
+    #[test]
+    fn test_zusi_path_to_prejoined_zusi_path() {
+        let env = ZusiEnvironment {
+            data_dir: "/path/to/data_dir".into(),
+            config_dir: "/path/to/data_dir/and/then/config_dir".into(),
+        };
+
+        let prejoined_zusi_path = env.zusi_path_to_prejoined_zusi_path(ZusiPath::new("to/any/file").unwrap());
+
+        assert_eq!(prejoined_zusi_path.data_dir().to_str().unwrap(), "/path/to/data_dir");
+        assert_eq!(prejoined_zusi_path.zusi_path().get().to_str().unwrap(), "to/any/file");
+        assert_eq!(prejoined_zusi_path.full_path().to_str().unwrap(), "/path/to/data_dir/to/any/file");
     }
 }

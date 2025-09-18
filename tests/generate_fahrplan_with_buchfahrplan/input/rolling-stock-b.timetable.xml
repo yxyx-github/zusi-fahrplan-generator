@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Buchfahrplan" Version="A.7" MinVersion="A.0"/>
+    <Buchfahrplan Gattung="RE" Nummer="88888" spMax="10" MBrh="1.35" BremsstellungZug="2">
+        <Datei_fpn/>
+        <Datei_trn/>
+        <UTM UTM_WE="999" UTM_NS="9999" UTM_Zone="32" UTM_Zone2="U"/>
+        <FplZeile FplLaufweg="2108.7188">
+            <Fplkm km="40.5804" />
+            <FplName FplNameText="Hildesheim Hbf" />
+            <FplAnk Ank="2024-06-20 08:21:50" />
+            <FplAbf Abf="2024-06-20 08:22:50" />
+        </FplZeile>
+    </Buchfahrplan>
+</Zusi>

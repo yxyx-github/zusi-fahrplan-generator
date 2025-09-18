@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Zusi>
+    <Info DateiTyp="Buchfahrplan" Version="A.7" MinVersion="A.0"/>
+    <Buchfahrplan Gattung="RB" Nummer="00002" MBrh="1.6">
+        <Datei_fpn/>
+        <Datei_trn/>
+        <UTM UTM_WE="999" UTM_NS="9999" UTM_Zone="32" UTM_Zone2="U"/>
+        <FplZeile FplLaufweg="20092.018">
+            <Fplkm km="32.8757" />
+            <FplName FplNameText="Elze" />
+            <FplAnk Ank="2024-06-20 08:39:00" />
+            <FplAbf Abf="2024-06-20 08:41:40" />
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="21799.445">
+            <FplvMax vMax="33.3333"/>
+            <Fplkm km="1.7792"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="24631.027">
+            <Fplkm km="4.5357"/>
+            <FplName FplNameText="Mehle Hp"/>
+            <FplAbf Abf="2024-06-20 08:45:00"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="29134.139">
+            <Fplkm km="9.0405"/>
+            <FplName FplNameText="Osterwald Hp"/>
+            <FplAnk Ank="2024-06-20 08:48:00"/>
+            <FplAbf Abf="2024-06-20 08:48:40"/>
+        </FplZeile>
+        <FplZeile FplRglGgl="1" FplLaufweg="32220.396">
+            <Fplkm km="12.128"/>
+            <FplSignaltyp FplSignaltypNr="7"/>
+            <FplNameRechts FplNameText="E 60"/>
+        </FplZeile>
+    </Buchfahrplan>
+</Zusi>
