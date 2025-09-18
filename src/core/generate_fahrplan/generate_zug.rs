@@ -311,8 +311,10 @@ mod tests {
                 tasks: vec![
                     CopyDelayTask {
                         delay: Duration::hours(1),
-                        count: 1,
+                        first_delay: None,
                         increment: 2,
+                        first_increment: None,
+                        count: 1,
                         custom_rolling_stock: None,
                     },
                 ],
@@ -480,8 +482,10 @@ mod tests {
                 tasks: vec![
                     CopyDelayTask {
                         delay: Duration::hours(1),
-                        count: 1,
+                        first_delay: None,
                         increment: 2,
+                        first_increment: None,
+                        count: 1,
                         custom_rolling_stock: None,
                     },
                 ],
@@ -737,8 +741,10 @@ mod tests {
                 tasks: vec![
                     CopyDelayTask {
                         delay: Duration::hours(1),
-                        count: 1,
+                        first_delay: None,
                         increment: 2,
+                        first_increment: None,
+                        count: 1,
                         custom_rolling_stock: None,
                     },
                 ],

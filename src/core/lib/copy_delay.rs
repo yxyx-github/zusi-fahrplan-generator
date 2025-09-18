@@ -49,14 +49,26 @@ fn apply_copy_delay_task(env: &ZusiEnvironment, task: CopyDelayTask, zug: &RawGe
         vec![],
         |mut zuege, n| {
             let mut zug = zug.clone();
+
+            let delay = if task.first_delay.is_some() {
+                task.delay * (n - 1) + task.first_delay.unwrap()
+            } else {
+                n * task.delay
+            };
+            let increment = if task.first_increment.is_some() {
+                task.increment * (n as i32 - 1) + task.first_increment.unwrap()
+            } else {
+                n as i32 * task.increment
+            };
+
             zug.zug.nummer = zug_nummer
-                .to_new_incremented(n as i32 * task.increment)
+                .to_new_incremented(increment)
                 .map_err(|_| CopyDelayError::ZugNummerCanNotBeNegative)?
                 .into();
 
-            delay_fahrplan_eintraege(&mut zug.zug.fahrplan_eintraege, n * task.delay);
+            delay_fahrplan_eintraege(&mut zug.zug.fahrplan_eintraege, delay);
             if let Some(ref mut buchfahrplan) = zug.buchfahrplan {
-                delay_fahrplan_zeilen(&mut buchfahrplan.fahrplan_zeilen, n * task.delay);
+                delay_fahrplan_zeilen(&mut buchfahrplan.fahrplan_zeilen, delay);
                 buchfahrplan.nummer = zug.zug.nummer.clone();
             }
 
@@ -158,14 +170,18 @@ mod tests {
             tasks: vec![
                 CopyDelayTask {
                     delay: Duration::hours(4),
-                    count: 2,
+                    first_delay: None,
                     increment: 7,
+                    first_increment: None,
+                    count: 2,
                     custom_rolling_stock: Some(RollingStockConfig { path: rolling_stock_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
                 CopyDelayTask {
                     delay: Duration::hours(-1),
-                    count: 2,
+                    first_delay: None,
                     increment: -2,
+                    first_increment: None,
+                    count: 2,
                     custom_rolling_stock: None,
                 },
             ],
@@ -280,6 +296,143 @@ mod tests {
     }
 
     #[test]
+    fn test_copy_delay_with_custom_first() {
+        let tmp_dir = tempdir().unwrap();
+
+        let rolling_stock_template_path = tmp_dir.path().join("00001.trn");
+        fs::write(&rolling_stock_template_path, ROLLING_STOCK_TEMPLATE).unwrap();
+
+        let rolling_stock_timetable_path = tmp_dir.path().join("00000.timetable.xml");
+        fs::write(&rolling_stock_timetable_path, ROLLING_STOCK_TIMETABLE).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let input = RawGeneratedZug {
+            zug: Zug::builder()
+                .fahrplan_datei(Datei::builder().build())
+                .nummer("342_702".into())
+                .fahrplan_eintraege(vec![
+                    FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 02:20:50))).abfahrt(Some(datetime!(2004-07-09 02:21:30))).build(),
+                    FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 02:23:30))).build(),
+                ])
+                .fahrzeug_varianten(
+                    FahrzeugVarianten::builder()
+                        .bezeichnung("default".into())
+                        .zufalls_wert(1.)
+                        .fahrzeug_infos(vec![
+                            FahrzeugInfo::builder()
+                                .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                .id_haupt(1)
+                                .id_neben(1)
+                                .build(),
+                        ])
+                        .build()
+                )
+                .build(),
+            buchfahrplan: None,
+        };
+
+        let config = CopyDelayConfig {
+            tasks: vec![
+                CopyDelayTask {
+                    delay: Duration::hours(4),
+                    first_delay: Some(Duration::hours(1)),
+                    increment: 7,
+                    first_increment: Some(1),
+                    count: 3,
+                    custom_rolling_stock: None,
+                },
+            ],
+        };
+
+        let expected = vec![
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("343_703".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 03:20:50))).abfahrt(Some(datetime!(2004-07-09 03:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 03:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: None,
+            },
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("350_710".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 07:20:50))).abfahrt(Some(datetime!(2004-07-09 07:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 07:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: None,
+            },
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("357_717".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 11:20:50))).abfahrt(Some(datetime!(2004-07-09 11:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 11:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: None,
+            },
+        ];
+
+        assert_eq!(
+            copy_delay(&env, config, &input).unwrap(),
+            expected,
+        );
+
+        assert_eq!(fs::read_to_string(rolling_stock_template_path).unwrap(), ROLLING_STOCK_TEMPLATE);
+        assert_eq!(fs::read_to_string(rolling_stock_timetable_path).unwrap(), ROLLING_STOCK_TIMETABLE);
+    }
+
+    #[test]
     fn test_copy_delay_with_buchfahrplan() {
         let tmp_dir = tempdir().unwrap();
 
@@ -341,14 +494,18 @@ mod tests {
             tasks: vec![
                 CopyDelayTask {
                     delay: Duration::hours(4),
-                    count: 1,
+                    first_delay: None,
                     increment: 7,
+                    first_increment: None,
+                    count: 1,
                     custom_rolling_stock: Some(RollingStockConfig { path: rolling_stock_template_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
                 CopyDelayTask {
                     delay: Duration::hours(-1),
-                    count: 1,
+                    first_delay: None,
                     increment: -2,
+                    first_increment: None,
+                    count: 1,
                     custom_rolling_stock: None,
                 },
             ],
@@ -451,6 +608,215 @@ mod tests {
     }
 
     #[test]
+    fn test_copy_delay_with_buchfahrplan_with_custom_first() {
+        let tmp_dir = tempdir().unwrap();
+
+        let rolling_stock_template_path = tmp_dir.path().join("00001.trn");
+        fs::write(&rolling_stock_template_path, ROLLING_STOCK_TEMPLATE).unwrap();
+
+        let rolling_stock_timetable_path = tmp_dir.path().join("00000.timetable.xml");
+        fs::write(&rolling_stock_timetable_path, ROLLING_STOCK_TIMETABLE).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let input = RawGeneratedZug {
+            zug: Zug::builder()
+                .fahrplan_datei(Datei::builder().build())
+                .nummer("342_702".into())
+                .fahrplan_eintraege(vec![
+                    FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 02:20:50))).abfahrt(Some(datetime!(2004-07-09 02:21:30))).build(),
+                    FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 02:23:30))).build(),
+                ])
+                .fahrzeug_varianten(
+                    FahrzeugVarianten::builder()
+                        .bezeichnung("default".into())
+                        .zufalls_wert(1.)
+                        .fahrzeug_infos(vec![
+                            FahrzeugInfo::builder()
+                                .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                .id_haupt(1)
+                                .id_neben(1)
+                                .build(),
+                        ])
+                        .build()
+                )
+                .build(),
+            buchfahrplan: Some(
+                Buchfahrplan::builder()
+                    .nummer("342_702".into())
+                    .fahrplan_zeilen(vec![
+                        FahrplanZeile::builder()
+                            .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                            .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2004-07-09 02:20:50)).build()))
+                            .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 02:21:30)).build()))
+                            .build(),
+                        FahrplanZeile::builder()
+                            .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                            .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 02:23:30)).build()))
+                            .build(),
+                    ])
+                    .datei_fpn(Datei::builder().build())
+                    .datei_trn(Datei::builder().build())
+                    .utm(UTM::builder().build())
+                    .build()
+            ),
+        };
+
+        let config = CopyDelayConfig {
+            tasks: vec![
+                CopyDelayTask {
+                    delay: Duration::hours(3),
+                    first_delay: Some(Duration::hours(2)),
+                    increment: 6,
+                    first_increment: Some(4),
+                    count: 3,
+                    custom_rolling_stock: None,
+                },
+            ],
+        };
+
+        let expected = vec![
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("346_706".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 04:20:50))).abfahrt(Some(datetime!(2004-07-09 04:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 04:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: Some(
+                    Buchfahrplan::builder()
+                        .nummer("346_706".into())
+                        .fahrplan_zeilen(vec![
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2004-07-09 04:20:50)).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 04:21:30)).build()))
+                                .build(),
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 04:23:30)).build()))
+                                .build(),
+                        ])
+                        .datei_fpn(Datei::builder().build())
+                        .datei_trn(Datei::builder().build())
+                        .utm(UTM::builder().build())
+                        .build()
+                ),
+            },
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("352_712".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 07:20:50))).abfahrt(Some(datetime!(2004-07-09 07:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 07:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: Some(
+                    Buchfahrplan::builder()
+                        .nummer("352_712".into())
+                        .fahrplan_zeilen(vec![
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2004-07-09 07:20:50)).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 07:21:30)).build()))
+                                .build(),
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 07:23:30)).build()))
+                                .build(),
+                        ])
+                        .datei_fpn(Datei::builder().build())
+                        .datei_trn(Datei::builder().build())
+                        .utm(UTM::builder().build())
+                        .build()
+                ),
+            },
+            RawGeneratedZug {
+                zug: Zug::builder()
+                    .fahrplan_datei(Datei::builder().build())
+                    .nummer("358_718".into())
+                    .fahrplan_eintraege(vec![
+                        FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2004-07-09 10:20:50))).abfahrt(Some(datetime!(2004-07-09 10:21:30))).build(),
+                        FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2004-07-09 10:23:30))).build(),
+                    ])
+                    .fahrzeug_varianten(
+                        FahrzeugVarianten::builder()
+                            .bezeichnung("default".into())
+                            .zufalls_wert(1.)
+                            .fahrzeug_infos(vec![
+                                FahrzeugInfo::builder()
+                                    .datei(Datei::builder().dateiname("TriebwagenB.fzg".try_into().unwrap()).build())
+                                    .id_haupt(1)
+                                    .id_neben(1)
+                                    .build(),
+                            ])
+                            .build()
+                    )
+                    .build(),
+                buchfahrplan: Some(
+                    Buchfahrplan::builder()
+                        .nummer("358_718".into())
+                        .fahrplan_zeilen(vec![
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2004-07-09 10:20:50)).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 10:21:30)).build()))
+                                .build(),
+                            FahrplanZeile::builder()
+                                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2004-07-09 10:23:30)).build()))
+                                .build(),
+                        ])
+                        .datei_fpn(Datei::builder().build())
+                        .datei_trn(Datei::builder().build())
+                        .utm(UTM::builder().build())
+                        .build()
+                ),
+            },
+        ];
+
+        assert_eq!(
+            copy_delay(&env, config, &input).unwrap(),
+            expected,
+        );
+
+        assert_eq!(fs::read_to_string(rolling_stock_template_path).unwrap(), ROLLING_STOCK_TEMPLATE);
+        assert_eq!(fs::read_to_string(rolling_stock_timetable_path).unwrap(), ROLLING_STOCK_TIMETABLE);
+    }
+
+    #[test]
     fn test_copy_delay_with_rolling_stock_error() {
         let tmp_dir = tempdir().unwrap();
 
@@ -474,8 +840,10 @@ mod tests {
             tasks: vec![
                 CopyDelayTask {
                     delay: Duration::hours(4),
-                    count: 2,
+                    first_delay: None,
                     increment: 7,
+                    first_increment: None,
+                    count: 2,
                     custom_rolling_stock: Some(RollingStockConfig { path: "non-existent".into() }),
                 },
             ],
@@ -511,8 +879,10 @@ mod tests {
             tasks: vec![
                 CopyDelayTask {
                     delay: Duration::hours(-1),
-                    count: 2,
+                    first_delay: None,
                     increment: -2,
+                    first_increment: None,
+                    count: 2,
                     custom_rolling_stock: None,
                 },
             ],
@@ -548,8 +918,10 @@ mod tests {
             tasks: vec![
                 CopyDelayTask {
                     delay: Duration::hours(-1),
-                    count: 2,
+                    first_delay: None,
                     increment: -3,
+                    first_increment: None,
+                    count: 2,
                     custom_rolling_stock: None,
                 },
             ],

@@ -22,7 +22,7 @@ pub enum ReplaceRollingStockError {
 }
 
 pub fn replace_rolling_stock(env: &ZusiEnvironment, config: RollingStockConfig, zug: &mut RawGeneratedZug) -> Result<(), ReplaceRollingStockError> {
-    let rolling_stock_template_path = env.path_to_prejoined_zusi_path(&config.path)
+    let rolling_stock_template_path = env.path_to_prejoined_zusi_path(config.path)
         .map_err(|error| ReplaceRollingStockError::ReadRollingStockError { error })?;
     let rolling_stock_template = read_zug(rolling_stock_template_path.full_path())
         .map_err(|error| ReplaceRollingStockError::ReadRollingStockError { error })?.value;

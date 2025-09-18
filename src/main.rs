@@ -5,11 +5,11 @@ use zusi_fahrplan_generator::cli::{Cli, CliCommand, CliScheduleCommand};
 use zusi_fahrplan_generator::core::generate_fahrplan::generate_fahrplan;
 use zusi_fahrplan_generator::core::lib::helpers::read_zug;
 use zusi_fahrplan_generator::core::schedules::apply::apply_schedule;
+use zusi_fahrplan_generator::core::schedules::generate::generate_schedule;
 use zusi_fahrplan_generator::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 use zusi_fahrplan_generator::input::fahrplan_config::FahrplanConfig;
 use zusi_fahrplan_generator::input::schedule::Schedule;
 use zusi_xml_lib::xml::zusi::Zusi;
-use zusi_fahrplan_generator::core::schedules::generate::generate_schedule;
 
 fn main() -> Result<(), String> {
     let cli = Cli::parse();
@@ -35,7 +35,7 @@ fn main() -> Result<(), String> {
             trn_file_paths
                 .into_iter()
                 .for_each(|trn_file_path| {
-                    apply_schedule_to_file(&schedule, &trn_file_path) // TODO: update_buchfahrplan if BuchfahrplanDatei is present
+                    apply_schedule_to_file(&schedule, &trn_file_path) // TODO: update_buchfahrplan if BuchfahrplanDatei is present? (currently impossible due to missing data_dir)
                         .unwrap_or_else(|error| eprintln!(r#"Error occoured for "{}": {error}"#, trn_file_path.display()));
                 });
             Ok(())

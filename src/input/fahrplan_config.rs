@@ -133,8 +133,8 @@ mod tests {
                     </Route>
                     <RollingStock path="./path/to/rolling-stock.trn"/>
                     <CopyDelay>
-                        <CopyDelayTask delay="03:00:00" count="1" increment="6"/>
-                        <CopyDelayTask delay="02:00:00" count="3" increment="2">
+                        <CopyDelayTask delay="03:00:00" increment="6" count="1"/>
+                        <CopyDelayTask delay="02:00:00" increment="2" count="3">
                             <RollingStock path="./path/to/rolling-stock.trn"/>
                         </CopyDelayTask>
                     </CopyDelay>
@@ -183,14 +183,18 @@ mod tests {
                             tasks: vec![
                                 CopyDelayTask {
                                     delay: Duration::hours(3),
-                                    count: 1,
+                                    first_delay: None,
                                     increment: 6,
+                                    first_increment: None,
+                                    count: 1,
                                     custom_rolling_stock: None,
                                 },
                                 CopyDelayTask {
                                     delay: Duration::hours(2),
-                                    count: 3,
+                                    first_delay: None,
                                     increment: 2,
+                                    first_increment: None,
+                                    count: 3,
                                     custom_rolling_stock: Some(RollingStockConfig { path: "./path/to/rolling-stock.trn".into() }),
                                 },
                             ],
