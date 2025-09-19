@@ -7,7 +7,7 @@ use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum UpdateBuchfahrplanError {
-    #[error("The number of entries for 'FahrplanZeile' and 'FahrplanEintrag' must be equal.")]
+    #[error("The number of relevant entries for 'FahrplanZeile' and 'FahrplanEintrag' must be equal.")]
     InvalidLen,
 
     #[error("Related entries of type 'FahrplanZeile' and 'FahrplanEintrag' must fulfill following criteria: 'Betriebsstelle' is equal, either 'Ankunft' or 'Abfahrt' must be set.")]
@@ -23,7 +23,6 @@ pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_z
     let fahrplan_zeilen: Vec<&mut FahrplanZeile> = fahrplan_zeilen
         .iter_mut()
         .filter(|zeile| zeile.fahrplan_ankunft.is_some() || zeile.fahrplan_abfahrt.is_some())
-        .map(|zeile| zeile)
         .collect();
 
     if fahrplan_zeilen.len() != fahrplan_eintraege.len() {
