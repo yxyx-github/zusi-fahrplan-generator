@@ -8,7 +8,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::tempdir;
-use crate::utils::print_output;
 
 const CONFIG_PATH: &str = "./tests/generate_fahrplan_with_buchfahrplan/input/config.xml";
 const FPN_TPL_PATH: &str = "./tests/generate_fahrplan_with_buchfahrplan/input/my-fahrplan.xml";
@@ -89,17 +88,15 @@ fn test_generate_fahrplan_with_buchfahrplan() {
     let trn_2_timetable_path = tmp_dir.path().join("data_dir/out/my-fahrplan/RB20002.timetable.xml");
 
     let mut cmd = Command::cargo_bin("zusi-fahrplan-generator").unwrap();
-    let output = cmd.arg("generate-fahrplan").arg("-c").arg(&config_path)
+    cmd.arg("generate-fahrplan").arg("-c").arg(&config_path)
         .assert()
-        /*.stdout(predicates::str::is_match(concat!(
+        .stdout(predicates::str::is_match(concat!(
             r#"^Generate Fahrplan using config file at "/tmp/\.[a-zA-Z0-9]+/data_dir/dev/config.xml"\r?\n"#,
             r#"Zusi data dir: "/tmp/.[a-zA-Z0-9]+/data_dir"\r?\n"#,
             r#"Config dir: "/tmp/.[a-zA-Z0-9]+/data_dir/dev"(\r\n|\n)*$"#,
-        )).unwrap())*/
+        )).unwrap())
         .stderr("")
-        .success().get_output().clone();
-
-    print_output(output);
+        .success();
 
     assert_eq!(read_xml_file(&fpn_path), read_xml_file(EXPECTED_FPN_PATH));
     assert_eq!(read_xml_file(&trn_1_path), read_xml_file(EXPECTED_TRN_1_PATH)); // TODO either BremsstellungZug missing or MBrh shouldn't be added
