@@ -85,7 +85,15 @@ impl<'a> RglGglFahrplanZeilen<'a> {
     fn insert_or_return(&mut self, new_zeile: &'a mut FahrplanZeile) -> Option<&'a mut FahrplanZeile> {
         let zeile = self.zeilen.first().unwrap(); // RglGglFahrplanZeilen can only be constructed with at least one entry
 
-        if zeile.fahrplan_name == new_zeile.fahrplan_name &&
+        let text_equals = match (zeile, &new_zeile) {
+            (
+                FahrplanZeile { fahrplan_name: Some(FahrplanName { fahrplan_name_text, .. }), ..},
+                FahrplanZeile { fahrplan_name: Some(FahrplanName { fahrplan_name_text: new_fahrplan_name_text, .. }), ..},
+            ) => fahrplan_name_text == new_fahrplan_name_text,
+            _ => false,
+        };
+
+        if text_equals &&
             zeile.fahrplan_ankunft == new_zeile.fahrplan_ankunft &&
             zeile.fahrplan_abfahrt == new_zeile.fahrplan_abfahrt {
             // insert to set must be executed after other conditions are already checked, otherwise this could lead to an inconsistent state (rgl_ggl inserted but zeile not pushed)
@@ -234,7 +242,7 @@ mod tests {
                 .fahrplan_regelgleis_gegengleis(2)
                 .fahrplan_laufweg(24631.027)
                 .fahrplan_km(vec![FahrplanKm::builder().km(4.6357).build()])
-                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).fahrplan_wichtigkeit(2).build()))
                 .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:06:00)).build()))
                 .build(),
             FahrplanZeile::builder()
@@ -280,7 +288,7 @@ mod tests {
                 .fahrplan_regelgleis_gegengleis(2)
                 .fahrplan_laufweg(24631.027)
                 .fahrplan_km(vec![FahrplanKm::builder().km(4.6357).build()])
-                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).fahrplan_wichtigkeit(2).build()))
                 .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
                 .build(),
             FahrplanZeile::builder()
