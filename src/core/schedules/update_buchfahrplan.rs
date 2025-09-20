@@ -10,7 +10,7 @@ use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum UpdateBuchfahrplanError {
     #[error("The number of relevant entries for 'FahrplanZeile' and 'FahrplanEintrag' must be equal.")]
-    InvalidLen,
+    InvalidLen, // TODO: add fahrplan_eintraege and fahrplan_zeilen => display
 
     #[error("Related entries of type 'FahrplanZeile' and 'FahrplanEintrag' must fulfill following criteria: 'Betriebsstelle' is equal, either 'Ankunft' or 'Abfahrt' must be set.")]
     RelatedEntriesMustBeEqual, // TODO: specify failed criteria
