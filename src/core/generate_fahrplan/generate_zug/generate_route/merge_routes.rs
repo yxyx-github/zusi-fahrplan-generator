@@ -612,24 +612,24 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(31660.822)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(11.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(11.5721).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 50".into()).build()))
                     .build(),
@@ -654,23 +654,23 @@ mod tests {
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(22.2222).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(3435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 60".into()).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(4435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(14.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(14.3433).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
@@ -697,31 +697,31 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(31660.822)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(11.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(11.5721).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:49:10)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2020-09-09 07:49:20)).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:49:40)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 60".into()).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(34435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(14.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(14.3433).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:56:50)).build()))
                     .build(),
@@ -753,24 +753,24 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(31660.822)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(11.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(11.5721).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 50".into()).build()))
                     .build(),
@@ -795,23 +795,23 @@ mod tests {
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(22.2222).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(3435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 60".into()).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(4435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(14.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(14.3433).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
@@ -838,30 +838,30 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(31660.822)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(11.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(11.5721).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:49:10)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:49:20)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 60".into()).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(34435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(14.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(14.3433).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:56:30)).build()))
                     .build(),
@@ -893,24 +893,24 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(31660.822)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(11.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(11.5721).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 50".into()).build()))
                     .build(),
@@ -935,23 +935,23 @@ mod tests {
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(22.2222).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(212.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(212.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(212.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(212.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(3435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(213.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(213.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 60".into()).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(4435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(214.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(214.3433).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
@@ -988,13 +988,13 @@ mod tests {
             fahrplan_zeilen: vec![
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(32883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(33435.87)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(13.3433).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(13.3433).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(9).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("A 50".into()).build()))
                     .build(),
@@ -1019,11 +1019,11 @@ mod tests {
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2660.822)
                     .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(22.2222).build()))
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.5721).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.5721).build()])
                     .build(),
                 FahrplanZeile::builder()
                     .fahrplan_laufweg(2883.34)
-                    .fahrplan_km(Some(FahrplanKm::builder().km(12.7907).build()))
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
                     .build(),
