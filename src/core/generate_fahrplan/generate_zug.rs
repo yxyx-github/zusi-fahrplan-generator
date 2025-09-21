@@ -17,7 +17,7 @@ use zusi_xml_lib::xml::zusi::zug::fahrzeug_varianten::FahrzeugVarianten;
 use zusi_xml_lib::xml::zusi::zug::Zug;
 
 #[derive(Error, Debug, Clone, PartialEq)]
-#[error("Couldn't generate 'Zug' with 'Zugnummer' {zug_nummer}: {error}")]
+#[error("Couldn't generate Zug with Zugnummer '{zug_nummer}': {error}")]
 pub struct GenerateZugError {
     zug_nummer: String,
     error: GenerateZugErrorKind,
@@ -31,7 +31,7 @@ pub enum GenerateZugErrorKind {
         error: GenerateRouteError,
     },
 
-    #[error("The 'Fahrplan' file couldn't be attached: {error}")]
+    #[error("The Fahrplan file couldn't be attached: {error}")]
     AttachFahrplanFileError {
         error: FileError,
     },
@@ -48,7 +48,7 @@ pub enum GenerateZugErrorKind {
         error: ReplaceRollingStockError,
     },
 
-    #[error("Couldn't copy delay the 'Zug': {error}")]
+    #[error("Couldn't copy delay the Zug: {error}")]
     CopyDelayError {
         #[from]
         error: CopyDelayError,

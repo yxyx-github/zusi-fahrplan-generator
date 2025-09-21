@@ -7,7 +7,7 @@ use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ApplyScheduleError {
     /// occours if ankunft of FahrplanEintrag is None
-    #[error("The given stop time couldn't be applied for '{betriebsstelle}'. Does the entry have both 'Ankunft' and 'Abfahrt' set?")]
+    #[error("The given stop time couldn't be applied for '{betriebsstelle}'. Does the entry have both Ankunft and Abfahrt set?")]
     CannotApplyStopTime {
         betriebsstelle: String,
     },

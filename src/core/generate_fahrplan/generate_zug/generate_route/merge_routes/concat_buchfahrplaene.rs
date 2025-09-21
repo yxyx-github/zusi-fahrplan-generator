@@ -6,7 +6,7 @@ use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum ConcatBuchfahrplaeneError {
     /// For criteria see [can_concat]
-    #[error("The 'Buchfahrplaene' aren't consecutive. The last entry representing a 'Betriebsstelle' of the previous 'Buchfahrplan' must match the first entry representing a 'Betriebsstelle' of the next 'Buchfahrplan' in some criteria: 'Km' and 'Betriebsstelle' must be equal, at least one entry needs to have 'Abfahrt' set.")]
+    #[error("The Buchfahrplaene aren't consecutive. The last entry representing a Betriebsstelle of the previous Buchfahrplan must match the first entry representing a Betriebsstelle of the next Buchfahrplan in some criteria: Km and Betriebsstelle must be equal, at least one entry needs to have Abfahrt set.")]
     NonConsecutiveBuchfahrplaene,
 }
 

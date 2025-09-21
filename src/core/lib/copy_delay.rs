@@ -15,13 +15,13 @@ pub enum CopyDelayError {
         error: ReplaceRollingStockError,
     },
 
-    #[error("The 'Zugnummer' is invalid: {error}")]
+    #[error("The Zugnummer is invalid: {error}")]
     InvalidZugNummer {
         #[from]
         error: ParseIntError,
     },
 
-    #[error("The 'Zugnummer' always must be positive. It can be decremented only if the resulting value is still positive.")]
+    #[error("The Zugnummer always must be positive. It can be decremented only if the resulting value is still positive.")]
     ZugNummerCanNotBeNegative,
 }
 

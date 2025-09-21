@@ -14,7 +14,7 @@ pub enum ReplaceRollingStockError {
         #[source]
         error: FileError,
     },
-    #[error("Couldn't read the 'Buchfahrplan' file for the given rolling stock template: {error}")]
+    #[error("Couldn't read the Buchfahrplan file for the given rolling stock template: {error}")]
     ReadBuchfahrplanError {
         #[source]
         error: FileError,

@@ -8,20 +8,20 @@ use thiserror::Error;
 use time::Duration;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum MergeRoutePartsError {
     /// For criteria see [can_merge]
-    #[error("The route parts aren't consecutive. The last entry of the previous part must match the first entry of the next part in some criteria: 'Betriebsstelle' must be equal, 'Abfahrt' needs to be set for both entries, 'Ankunft' must be set for either both or none of these entries.")]
+    #[error("The route parts aren't consecutive. The last entry of the previous part must match the first entry of the next part in some criteria: Betriebsstelle must be equal, Abfahrt needs to be set for both entries, Ankunft must be set for either both or none of these entries.")]
     NonConsecutiveRouteParts,
 
     #[error("Multiple route parts with time fix were found, but only one is allowed.")]
     MoreThanOneTimeFix,
 
-    #[error("Couldn't merge 'Buchfahrplaene': {0}")]
+    #[error("Couldn't merge Buchfahrplaene: {0}")]
     MergeBuchfahrplaeneError(#[from] MergeBuchfahrplaeneError)
 }
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum MergeBuchfahrplaeneError {
     #[error("{error}")]
     ConcatBuchfahrplaeneError {
@@ -1031,12 +1031,12 @@ mod tests {
             mindest_bremshundertstel: 0.,
         };
 
-        assert_eq!(
+        assert!(matches!(
             merge_routes(current, new).unwrap_err(),
             MergeRoutePartsError::MergeBuchfahrplaeneError(MergeBuchfahrplaeneError::UpdateBuchfahrplaeneError {
-                error: UpdateBuchfahrplanError::InvalidLen,
+                error: UpdateBuchfahrplanError::InvalidLen { .. },
             }),
-        );
+        ));
     }
 
     #[test]

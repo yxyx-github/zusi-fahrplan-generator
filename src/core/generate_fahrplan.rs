@@ -17,22 +17,22 @@ use zusi_xml_lib::xml::zusi::{TypedZusi, Zusi};
 
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateFahrplanError {
-    #[error("The given 'Fahrplan' template couldn't be read: {error}")]
+    #[error("The given Fahrplan template couldn't be read: {error}")]
     ReadFahrplanTemplateError {
         error: FileError,
     },
 
-    #[error("The generated 'Fahrplan' couldn't be written to disk: {error}")]
+    #[error("The generated Fahrplan couldn't be written to disk: {error}")]
     WriteGeneratedFahrplanError {
         error: FileError,
     },
 
-    #[error("A 'Zug' couldn't be generated: {error}")]
+    #[error("A Zug couldn't be generated: {error}")]
     GenerateZugError {
         error: GenerateZugError,
     },
 
-    #[error("A 'Zug' couldn't be attached: {error}")]
+    #[error("A Zug couldn't be attached: {error}")]
     AttachZugError {
         error: FileError,
     },

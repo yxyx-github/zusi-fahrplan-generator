@@ -1,5 +1,7 @@
-use std::collections::BTreeSet;
-use std::vec::IntoIter;
+mod rgl_ggl_fahrplan_zeilen;
+
+use std::fmt::{Display, Formatter};
+use crate::core::schedules::update_buchfahrplan::rgl_ggl_fahrplan_zeilen::{OwnedRglGglFahrplanZeilen, RglGglFahrplanZeilen};
 use thiserror::Error;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_abfahrt::FahrplanAbfahrt;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_ankunft::FahrplanAnkunft;
@@ -7,13 +9,36 @@ use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_name::Fahrpl
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum UpdateBuchfahrplanError {
-    #[error("The number of relevant entries for 'FahrplanZeile' and 'FahrplanEintrag' must be equal.")]
-    InvalidLen, // TODO: add fahrplan_eintraege and fahrplan_zeilen => display
+    #[error("The number of relevant entries for FahrplanZeile and FahrplanEintrag must be equal.\n{0}")]
+    InvalidLen(InvalidLenData),
 
-    #[error("Related entries of type 'FahrplanZeile' and 'FahrplanEintrag' must fulfill following criteria: 'Betriebsstelle' is equal, either 'Ankunft' or 'Abfahrt' must be set.")]
+    #[error("Related entries of type FahrplanZeile and FahrplanEintrag must fulfill following criteria: Betriebsstelle is equal, either Ankunft or Abfahrt must be set.")]
     RelatedEntriesMustBeEqual, // TODO: specify failed criteria
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InvalidLenData {
+    fahrplan_eintraege: Vec<FahrplanEintrag>,
+    fahrplan_zeilen: Vec<OwnedRglGglFahrplanZeilen>,
+}
+
+impl Display for InvalidLenData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let formatted_fahrplan_eintraege = self.fahrplan_eintraege.iter().map(|eintrag| {
+            format!("-> {}: {:?} - {:?}", eintrag.betriebsstelle, eintrag.ankunft, eintrag.abfahrt)
+        }).collect::<Vec<_>>().join("\n");
+
+        let formatted_fahrplan_zeilen = self.fahrplan_zeilen.iter().map(|rgl_ggl_zeilen| {
+            format!("-> {}", rgl_ggl_zeilen)
+        }).collect::<Vec<_>>().join("\n");
+
+        writeln!(f, "Found FahrplanEintraege:")?;
+        writeln!(f, "{formatted_fahrplan_eintraege}")?;
+        writeln!(f, "Found FahrplanZeilen:")?;
+        write!(f, "{formatted_fahrplan_zeilen}")
+    }
 }
 
 pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_zeilen: &mut Vec<FahrplanZeile>) -> Result<(), UpdateBuchfahrplanError> {
@@ -37,7 +62,10 @@ pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_z
         });
 
     if fahrplan_zeilen.len() != fahrplan_eintraege.len() {
-        return Err(UpdateBuchfahrplanError::InvalidLen);
+        return Err(UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+            fahrplan_eintraege: fahrplan_eintraege.into_iter().map(|eintrag| eintrag.clone()).collect(),
+            fahrplan_zeilen: fahrplan_zeilen.into_iter().map(|entry| entry.into_owned()).collect(),
+        }));
     }
 
     let zipped_entries: Vec<_> = fahrplan_eintraege.into_iter().zip(fahrplan_zeilen.into_iter()).collect();
@@ -63,59 +91,6 @@ pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_z
                 Ok(())
             })
         })
-}
-
-struct RglGglFahrplanZeilen<'a> {
-    rgl_ggl: BTreeSet<i32>,
-    zeilen: Vec<&'a mut FahrplanZeile>,
-}
-
-impl<'a> RglGglFahrplanZeilen<'a> {
-    fn new(zeile: &'a mut FahrplanZeile) -> Self {
-        let mut rgl_ggl = BTreeSet::new();
-        rgl_ggl.insert(zeile.fahrplan_regelgleis_gegengleis);
-        assert_eq!(rgl_ggl.len(), 1);
-
-        Self {
-            rgl_ggl,
-            zeilen: vec![zeile],
-        }
-    }
-
-    fn insert_or_return(&mut self, new_zeile: &'a mut FahrplanZeile) -> Option<&'a mut FahrplanZeile> {
-        let zeile = self.zeilen.first().unwrap(); // RglGglFahrplanZeilen can only be constructed with at least one entry
-
-        let text_equals = match (zeile, &new_zeile) {
-            (
-                FahrplanZeile { fahrplan_name: Some(FahrplanName { fahrplan_name_text, .. }), ..},
-                FahrplanZeile { fahrplan_name: Some(FahrplanName { fahrplan_name_text: new_fahrplan_name_text, .. }), ..},
-            ) => fahrplan_name_text == new_fahrplan_name_text,
-            _ => false,
-        };
-
-        if text_equals &&
-            zeile.fahrplan_ankunft == new_zeile.fahrplan_ankunft &&
-            zeile.fahrplan_abfahrt == new_zeile.fahrplan_abfahrt {
-            // insert to set must be executed after other conditions are already checked, otherwise this could lead to an inconsistent state (rgl_ggl inserted but zeile not pushed)
-            if self.rgl_ggl.insert(new_zeile.fahrplan_regelgleis_gegengleis) {
-                self.zeilen.push(new_zeile);
-                None
-            } else {
-                Some(new_zeile)
-            }
-        } else {
-            Some(new_zeile)
-        }
-    }
-}
-
-impl<'a> IntoIterator for RglGglFahrplanZeilen<'a> {
-    type Item = &'a mut FahrplanZeile;
-    type IntoIter = IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.zeilen.into_iter()
-    }
 }
 
 #[cfg(test)]
@@ -353,7 +328,13 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege,
+                fahrplan_zeilen: vec![
+                    OwnedRglGglFahrplanZeilen::new([1].into(), vec![fahrplan_zeilen[0].clone()]),
+                    OwnedRglGglFahrplanZeilen::new([2].into(), vec![fahrplan_zeilen[1].clone()]),
+                ],
+            }),
         );
     }
 
@@ -389,7 +370,13 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege,
+                fahrplan_zeilen: vec![
+                    OwnedRglGglFahrplanZeilen::new([1].into(), vec![fahrplan_zeilen[0].clone()]),
+                    OwnedRglGglFahrplanZeilen::new([2].into(), vec![fahrplan_zeilen[1].clone()]),
+                ],
+            }),
         );
     }
 
@@ -425,7 +412,13 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege,
+                fahrplan_zeilen: vec![
+                    OwnedRglGglFahrplanZeilen::new([1].into(), vec![fahrplan_zeilen[0].clone()]),
+                    OwnedRglGglFahrplanZeilen::new([2].into(), vec![fahrplan_zeilen[1].clone()]),
+                ],
+            }),
         );
     }
 
@@ -542,7 +535,12 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege,
+                fahrplan_zeilen: vec![
+                    OwnedRglGglFahrplanZeilen::new([1].into(), vec![fahrplan_zeilen[1].clone()]),
+                ],
+            }),
         );
     }
 
@@ -623,7 +621,10 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege,
+                fahrplan_zeilen: vec![],
+            }),
         );
     }
 
@@ -649,7 +650,12 @@ mod tests {
 
         assert_eq!(
             update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap_err(),
-            UpdateBuchfahrplanError::InvalidLen,
+            UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
+                fahrplan_eintraege: vec![],
+                fahrplan_zeilen: vec![
+                    OwnedRglGglFahrplanZeilen::new([1].into(), vec![fahrplan_zeilen[0].clone()]),
+                ],
+            }),
         );
     }
 }

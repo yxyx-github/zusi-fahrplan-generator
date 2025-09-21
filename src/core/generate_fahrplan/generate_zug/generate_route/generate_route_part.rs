@@ -11,9 +11,9 @@ use std::path::PathBuf;
 use thiserror::Error;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateRoutePartError {
-    #[error("The route part must contain at least one 'FahrplanEintrag'.")]
+    #[error("The route part must contain at least one FahrplanEintrag.")]
     EmptyRoutePart,
 
     #[error("The schedule couldn't be read: {error}")]
@@ -22,14 +22,14 @@ pub enum GenerateRoutePartError {
         error: FileError,
     },
 
-    #[error("Couldn't apply the schedule:\n{error}")]
+    #[error("Couldn't apply the schedule: {error}")]
     CouldNotApplySchedule {
         #[from]
         error: ApplyScheduleError,
     },
 
     /// Occours if corresponding time is [None].
-    #[error("The time fix couldn't be applied to the route part. This is likely because the selected 'FahrplanEintrag' entry doesn't contain any 'abfahrt' or 'ankunft' time.")]
+    #[error("The time fix couldn't be applied to the route part. This is likely because the selected FahrplanEintrag entry doesn't contain a value Abfahrt or Ankunft.")]
     CouldNotApplyTimeFix,
 
     #[error("The route source couldn't be read: {error}")]
@@ -38,13 +38,13 @@ pub enum GenerateRoutePartError {
         error: FileError, // TODO: won't be always a FileError, e.g. if TrainConfigByNummer will be implemented
     },
 
-    #[error("The 'Buchfahrplan' attached to the route couldn't be read: {error}")]
+    #[error("The Buchfahrplan attached to the route couldn't be read: {error}")]
     ReadBuchfahrplanError {
         #[source]
         error: FileError,
     },
 
-    #[error("The 'Buchfahrplan' attached to the route couldn't be updated: {error}")]
+    #[error("The Buchfahrplan attached to the route couldn't be updated: {error}")]
     UpdateBuchfahrplanError {
         #[from]
         error: UpdateBuchfahrplanError,
