@@ -7,6 +7,7 @@ use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_abfahrt::Fah
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_ankunft::FahrplanAnkunft;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_name::FahrplanName;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
+use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 #[derive(Error, Debug, Clone, PartialEq)]
@@ -44,7 +45,7 @@ impl Display for InvalidLenData {
 pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_zeilen: &mut Vec<FahrplanZeile>) -> Result<(), UpdateBuchfahrplanError> {
     let fahrplan_eintraege: Vec<&FahrplanEintrag> = fahrplan_eintraege
         .iter()
-        .filter(|eintrag| eintrag.abfahrt.is_some())
+        .filter(|eintrag| eintrag.abfahrt.is_some() && eintrag.fahrplan_eintrag != FahrplanEintragsTyp::Hilfseintrag)
         .collect();
 
     let fahrplan_zeilen: Vec<RglGglFahrplanZeilen> = fahrplan_zeilen
@@ -105,6 +106,11 @@ mod tests {
     #[test]
     fn test_update_buchfahrplan() {
         let fahrplan_eintraege = vec![
+            FahrplanEintrag::builder()
+                .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                .abfahrt(Some(datetime!(2024-06-20 08:42:00)))
+                .betriebsstelle("Mehle Hp".into())
+                .build(),
             FahrplanEintrag::builder()
                 .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
                 .betriebsstelle("Mehle Hp".into())
