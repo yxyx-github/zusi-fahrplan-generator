@@ -45,8 +45,28 @@ impl Display for InvalidLenData {
 pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_zeilen: &mut Vec<FahrplanZeile>) -> Result<(), UpdateBuchfahrplanError> {
     let fahrplan_eintraege: Vec<&FahrplanEintrag> = fahrplan_eintraege
         .iter()
-        .filter(|eintrag| eintrag.abfahrt.is_some() && eintrag.fahrplan_eintrag != FahrplanEintragsTyp::Hilfseintrag)
+        .filter(|eintrag| eintrag.abfahrt.is_some())
         .collect();
+
+    let fahrplan_eintraege = (0..fahrplan_eintraege.len()).fold(vec![], |mut acc, i| {
+        let current_eintrag = fahrplan_eintraege.get(i).unwrap();
+        if current_eintrag.fahrplan_eintrag == FahrplanEintragsTyp::Hilfseintrag {
+            let prev_eq = if i > 0 {
+                fahrplan_eintraege.get(i - 1).is_some_and(|eintrag|
+                eintrag.betriebsstelle == current_eintrag.betriebsstelle)
+            } else {
+                false
+            };
+            let next_eq = fahrplan_eintraege.get(i + 1).is_some_and(|eintrag|
+                eintrag.betriebsstelle == current_eintrag.betriebsstelle);
+            if !prev_eq && !next_eq {
+                acc.push(*current_eintrag)
+            }
+        } else {
+            acc.push(*current_eintrag)
+        }
+        acc
+    });
 
     let fahrplan_zeilen: Vec<RglGglFahrplanZeilen> = fahrplan_zeilen
         .iter_mut()
@@ -106,11 +126,6 @@ mod tests {
     #[test]
     fn test_update_buchfahrplan() {
         let fahrplan_eintraege = vec![
-            FahrplanEintrag::builder()
-                .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
-                .abfahrt(Some(datetime!(2024-06-20 08:42:00)))
-                .betriebsstelle("Mehle Hp".into())
-                .build(),
             FahrplanEintrag::builder()
                 .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
                 .betriebsstelle("Mehle Hp".into())
@@ -182,6 +197,113 @@ mod tests {
                 .fahrplan_km(vec![FahrplanKm::builder().km(12.128).build()])
                 .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(7).build()))
                 .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("E 60".into()).build()))
+                .build(),
+        ];
+
+        update_buchfahrplan(&fahrplan_eintraege, &mut fahrplan_zeilen).unwrap();
+
+        assert_eq!(fahrplan_zeilen, expected_fahrplan_zeilen);
+    }
+
+    #[test]
+    fn test_update_buchfahrplan_with_hilfseintrag() {
+        let fahrplan_eintraege = vec![
+            FahrplanEintrag::builder()
+                .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                .abfahrt(Some(datetime!(2024-06-20 08:42:00)))
+                .betriebsstelle("Mehle Hp".into())
+                .build(),
+            FahrplanEintrag::builder()
+                .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
+                .betriebsstelle("Mehle Hp".into())
+                .build(),
+            FahrplanEintrag::builder()
+                .ankunft(Some(datetime!(2024-06-20 08:49:00)))
+                .abfahrt(Some(datetime!(2024-06-20 08:49:50)))
+                .signal_vorlauf(160.)
+                .betriebsstelle("Osterwald Hp".into())
+                .build(),
+            FahrplanEintrag::builder()
+                .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                .ankunft(Some(datetime!(2024-06-20 08:53:00)))
+                .abfahrt(Some(datetime!(2024-06-20 08:55:00)))
+                .betriebsstelle("Hilf Sbk".into())
+                .build(),
+        ];
+
+        let mut fahrplan_zeilen = vec![
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(21799.445)
+                .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
+                .fahrplan_km(vec![FahrplanKm::builder().km(1.7792).build()])
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(24631.027)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:06:00)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(29134.139)
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:39:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(32220.396)
+                .fahrplan_km(vec![FahrplanKm::builder().km(12.128).build()])
+                .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(7).build()))
+                .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("E 60".into()).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_laufweg(32320.396)
+                .fahrplan_km(vec![FahrplanKm::builder().km(12.228).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:40:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
+                .build(),
+        ];
+
+        let expected_fahrplan_zeilen = vec![
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(21799.445)
+                .fahrplan_v_max(Some(FahrplanVMax::builder().v_max(33.3333).build()))
+                .fahrplan_km(vec![FahrplanKm::builder().km(1.7792).build()])
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(24631.027)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(29134.139)
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:49:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:49:50)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(32220.396)
+                .fahrplan_km(vec![FahrplanKm::builder().km(12.128).build()])
+                .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(7).build()))
+                .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("E 60".into()).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_laufweg(32320.396)
+                .fahrplan_km(vec![FahrplanKm::builder().km(12.228).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:53:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:55:00)).build()))
                 .build(),
         ];
 
