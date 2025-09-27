@@ -43,31 +43,6 @@ impl Display for InvalidLenData {
 }
 
 pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_zeilen: &mut Vec<FahrplanZeile>) -> Result<(), UpdateBuchfahrplanError> {
-    let fahrplan_eintraege: Vec<&FahrplanEintrag> = fahrplan_eintraege
-        .iter()
-        .filter(|eintrag| eintrag.abfahrt.is_some())
-        .collect();
-
-    let fahrplan_eintraege = (0..fahrplan_eintraege.len()).fold(vec![], |mut acc, i| {
-        let current_eintrag = fahrplan_eintraege.get(i).unwrap();
-        if current_eintrag.fahrplan_eintrag == FahrplanEintragsTyp::Hilfseintrag {
-            let prev_eq = if i > 0 {
-                fahrplan_eintraege.get(i - 1).is_some_and(|eintrag|
-                eintrag.betriebsstelle == current_eintrag.betriebsstelle)
-            } else {
-                false
-            };
-            let next_eq = fahrplan_eintraege.get(i + 1).is_some_and(|eintrag|
-                eintrag.betriebsstelle == current_eintrag.betriebsstelle);
-            if !prev_eq && !next_eq {
-                acc.push(*current_eintrag)
-            }
-        } else {
-            acc.push(*current_eintrag)
-        }
-        acc
-    });
-
     let fahrplan_zeilen: Vec<RglGglFahrplanZeilen> = fahrplan_zeilen
         .iter_mut()
         .filter(|zeile| zeile.fahrplan_ankunft.is_some() || zeile.fahrplan_abfahrt.is_some())
@@ -81,6 +56,48 @@ pub fn update_buchfahrplan(fahrplan_eintraege: &Vec<FahrplanEintrag>, fahrplan_z
             }
             acc
         });
+
+    let fahrplan_eintraege: Vec<&FahrplanEintrag> = fahrplan_eintraege
+        .iter()
+        .filter(|eintrag| eintrag.abfahrt.is_some())
+        .collect();
+
+    let fahrplan_eintraege = (0..fahrplan_eintraege.len()).fold(vec![], |mut acc, i| {
+        let current_eintrag = fahrplan_eintraege.get(i).unwrap();
+        if current_eintrag.fahrplan_eintrag == FahrplanEintragsTyp::Hilfseintrag {
+            if fahrplan_zeilen.get(acc.len()).is_some_and(|zeile| {
+                let zeile = zeile.first();
+                match zeile {
+                    FahrplanZeile {
+                        fahrplan_name: Some(FahrplanName { fahrplan_name_text, .. }),
+                        fahrplan_ankunft: Some(FahrplanAnkunft { fahrplan_eintrag: FahrplanEintragsTyp::Hilfseintrag, .. }),
+                        ..
+                    } if *fahrplan_name_text == current_eintrag.betriebsstelle => true,
+                    _ => false,
+                }
+            }) {
+                acc.push(*current_eintrag)
+            }
+        } else {
+            acc.push(*current_eintrag)
+        }
+        /*if current_eintrag.fahrplan_eintrag == FahrplanEintragsTyp::Hilfseintrag {
+            let prev_eq = if i > 0 {
+                fahrplan_eintraege.get(i - 1).is_some_and(|eintrag|
+                eintrag.betriebsstelle == current_eintrag.betriebsstelle)
+            } else {
+                false
+            };
+            let next_eq = fahrplan_eintraege.get(i + 1).is_some_and(|eintrag|
+                eintrag.betriebsstelle == current_eintrag.betriebsstelle);
+            if !prev_eq && !next_eq {
+                acc.push(*current_eintrag)
+            }
+        } else {
+            acc.push(*current_eintrag)
+        }*/
+        acc
+    });
 
     if fahrplan_zeilen.len() != fahrplan_eintraege.len() {
         return Err(UpdateBuchfahrplanError::InvalidLen(InvalidLenData {
@@ -227,7 +244,13 @@ mod tests {
                 .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
                 .ankunft(Some(datetime!(2024-06-20 08:53:00)))
                 .abfahrt(Some(datetime!(2024-06-20 08:55:00)))
-                .betriebsstelle("Hilf Sbk".into())
+                .betriebsstelle("Hilf Sbk 1".into())
+                .build(),
+            FahrplanEintrag::builder()
+                .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                .ankunft(Some(datetime!(2024-06-20 08:55:00)))
+                .abfahrt(Some(datetime!(2024-06-20 08:57:00)))
+                .betriebsstelle("Hilf Sbk 2".into())
                 .build(),
         ];
 
@@ -263,8 +286,8 @@ mod tests {
             FahrplanZeile::builder()
                 .fahrplan_laufweg(32320.396)
                 .fahrplan_km(vec![FahrplanKm::builder().km(12.228).build()])
-                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk".into()).build()))
-                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:40:00)).build()))
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk 2".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:40:00)).fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag).build()))
                 .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
                 .build(),
         ];
@@ -301,9 +324,9 @@ mod tests {
             FahrplanZeile::builder()
                 .fahrplan_laufweg(32320.396)
                 .fahrplan_km(vec![FahrplanKm::builder().km(12.228).build()])
-                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk".into()).build()))
-                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:53:00)).build()))
-                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:55:00)).build()))
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Hilf Sbk 2".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:55:00)).fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:57:00)).build()))
                 .build(),
         ];
 

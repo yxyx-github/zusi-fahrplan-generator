@@ -21,6 +21,10 @@ impl<'a> RglGglFahrplanZeilen<'a> {
             zeilen: vec![zeile],
         }
     }
+    
+    pub fn first(&self) -> &FahrplanZeile {
+        self.zeilen.first().unwrap() // RglGglFahrplanZeilen can only be constructed with at least one entry
+    }
 
     pub fn insert_or_return(&mut self, new_zeile: &'a mut FahrplanZeile) -> Option<&'a mut FahrplanZeile> {
         let zeile = self.zeilen.first().unwrap(); // RglGglFahrplanZeilen can only be constructed with at least one entry
