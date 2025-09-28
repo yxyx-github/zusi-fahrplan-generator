@@ -23,7 +23,7 @@ pub enum GenerateRouteError {
     #[error("No route parts were found but at least one is required.")]
     NoRouteParts,
 
-    #[error("The route parts couldn't be mered: {error}")]
+    #[error("The route parts couldn't be merged: {error}")]
     MergeRoutePartsError {
         #[from]
         error: MergeRoutePartsError,
