@@ -33,7 +33,13 @@ pub fn concat_buchfahrplaene(mut current: Vec<FahrplanZeile>, new: Vec<FahrplanZ
     }
 
     let (can_concat, laufweg_diff) = match (current.last(), new.front()) {
-        (Some(previous_last), Some(next_first)) => (can_concat(previous_last, next_first), previous_last.fahrplan_laufweg - next_first.fahrplan_laufweg),
+        (
+            Some(previous_last),
+            Some(next_first)
+        ) => (
+            can_concat(previous_last, next_first, wende),
+            previous_last.fahrplan_laufweg - next_first.fahrplan_laufweg
+        ),
         _ => (false, 0.),
     };
 
@@ -58,7 +64,7 @@ pub fn concat_buchfahrplaene(mut current: Vec<FahrplanZeile>, new: Vec<FahrplanZ
     }
 }
 
-fn can_concat(first: &FahrplanZeile, second: &FahrplanZeile) -> bool {
+fn can_concat(first: &FahrplanZeile, second: &FahrplanZeile, wende: bool) -> bool {
     match (first, second) {
         (
             FahrplanZeile {
@@ -73,7 +79,7 @@ fn can_concat(first: &FahrplanZeile, second: &FahrplanZeile) -> bool {
                 fahrplan_abfahrt: next_abfahrt,
                 ..
             },
-        ) if previous_km == next_km && previous_betriebsstelle == next_betriebsstelle =>
+        ) if (wende || previous_km == next_km) && previous_betriebsstelle == next_betriebsstelle =>
             previous_abfahrt.is_some() || next_abfahrt.is_some(),
         _ => false,
     }
@@ -94,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_can_concat() {
-        assert_eq!(
+        assert!(
             can_concat(
                 &FahrplanZeile::builder()
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
@@ -105,10 +111,10 @@ mod tests {
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
                     .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
                     .build(),
+                false,
             ),
-            true,
         );
-        assert_eq!(
+        assert!(
             can_concat(
                 &FahrplanZeile::builder()
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
@@ -119,11 +125,26 @@ mod tests {
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
                     .build(),
+                false,
             ),
-            true,
         );
-        assert_eq!(
+        assert!(
             can_concat(
+                &FahrplanZeile::builder()
+                    .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
+                    .build(),
+                &FahrplanZeile::builder()
+                    .fahrplan_km(vec![FahrplanKm::builder().km(39.6).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
+                    .build(),
+                true,
+            ),
+        );
+
+        assert!(
+            !can_concat(
                 &FahrplanZeile::builder()
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
@@ -132,11 +153,11 @@ mod tests {
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
                     .build(),
+                false,
             ),
-            false,
         );
-        assert_eq!(
-            can_concat(
+        assert!(
+            !can_concat(
                 &FahrplanZeile::builder()
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
@@ -146,11 +167,11 @@ mod tests {
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("B".into()).build()))
                     .build(),
+                false,
             ),
-            false,
         );
-        assert_eq!(
-            can_concat(
+        assert!(
+            !can_concat(
                 &FahrplanZeile::builder()
                     .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
@@ -160,8 +181,22 @@ mod tests {
                     .fahrplan_km(vec![FahrplanKm::builder().km(2.7).build()])
                     .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
                     .build(),
+                false,
             ),
-            false,
+        );
+        assert!(
+            !can_concat(
+                &FahrplanZeile::builder()
+                    .fahrplan_km(vec![FahrplanKm::builder().km(39.7).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
+                    .build(),
+                &FahrplanZeile::builder()
+                    .fahrplan_km(vec![FahrplanKm::builder().km(39.6).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("A".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
+                    .build(),
+                false,
+            ),
         );
     }
 
@@ -351,7 +386,7 @@ mod tests {
             FahrplanZeile::builder()
                 .fahrplan_regelgleis_gegengleis(1)
                 .fahrplan_laufweg(29134.139)
-                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0415).build()])
                 .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
                 .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:39:00)).build()))
                 .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
@@ -376,7 +411,7 @@ mod tests {
             FahrplanZeile::builder()
                 .fahrplan_regelgleis_gegengleis(1)
                 .fahrplan_laufweg(29134.139)
-                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0415).build()])
                 .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
                 .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:39:00)).build()))
                 .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
