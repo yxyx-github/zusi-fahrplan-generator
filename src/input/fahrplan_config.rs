@@ -1,3 +1,4 @@
+use serde_helpers::default::IsDefault;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,12 @@ pub struct ZugConfig {
 
     #[serde(rename = "@gattung")]
     pub gattung: String,
+
+    #[serde(rename = "@zuglauf", default, skip_serializing_if = "IsDefault::is_default")]
+    pub zuglauf: String,
+
+    #[serde(rename = "@fahrplanGruppe", default, skip_serializing_if = "IsDefault::is_default")]
+    pub fahrplan_gruppe: String,
 
     #[serde(rename = "MetaData", default, skip_serializing_if = "Option::is_none")]
     pub meta_data: Option<MetaDataConfig>,
@@ -119,7 +126,7 @@ mod tests {
     const EXPECTED_SERIALIZED: &'static str = r#"
         <ZusiEnvironment dataDir="path/to/Zusi3User">
             <Fahrplan generateAt="./path/to/destination.fpn" generateFrom="./path/to/template.fpn">
-                <Zug nummer="20000" gattung="RB">
+                <Zug nummer="20000" gattung="RB" zuglauf="ADorf - BDorf" fahrplanGruppe="A - B">
                     <MetaData path="./path/to/meta-data.trn"/>
                     <Route>
                         <RoutePart>
@@ -161,6 +168,8 @@ mod tests {
                     ZugConfig {
                         nummer: "20000".into(),
                         gattung: "RB".into(),
+                        zuglauf: "ADorf - BDorf".into(),
+                        fahrplan_gruppe: "A - B".into(),
                         meta_data: Some(MetaDataConfig {
                             path: "./path/to/meta-data.trn".into(),
                         }),
@@ -203,6 +212,8 @@ mod tests {
                     ZugConfig {
                         nummer: "30000".into(),
                         gattung: "RE".into(),
+                        zuglauf: "".into(),
+                        fahrplan_gruppe: "".into(),
                         meta_data: None,
                         route: RouteConfig {
                             parts: vec![

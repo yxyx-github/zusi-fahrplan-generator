@@ -459,6 +459,8 @@ mod tests {
                 ZugConfig {
                     nummer: "20001".into(),
                     gattung: "RB".into(),
+                    zuglauf: "".into(),
+                    fahrplan_gruppe: "".into(),
                     meta_data: None,
                     route: RouteConfig {
                         parts: vec![
@@ -477,6 +479,8 @@ mod tests {
                 ZugConfig {
                     nummer: "10001".into(),
                     gattung: "RB".into(),
+                    zuglauf: "".into(),
+                    fahrplan_gruppe: "".into(),
                     meta_data: None,
                     route: RouteConfig {
                         parts: vec![
@@ -572,6 +576,8 @@ mod tests {
                 ZugConfig {
                     nummer: "20001".into(),
                     gattung: "RB".into(),
+                    zuglauf: "".into(),
+                    fahrplan_gruppe: "".into(),
                     meta_data: None,
                     route: RouteConfig {
                         parts: vec![
@@ -590,6 +596,8 @@ mod tests {
                 ZugConfig {
                     nummer: "10001".into(),
                     gattung: "RB".into(),
+                    zuglauf: "".into(),
+                    fahrplan_gruppe: "".into(),
                     meta_data: None,
                     route: RouteConfig {
                         parts: vec![

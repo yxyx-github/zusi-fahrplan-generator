@@ -71,6 +71,8 @@ pub fn generate_zug(env: &ZusiEnvironment, fahrplan_path: &PrejoinedZusiPath, zu
     let mut zug = Zug::builder()
         .gattung(zug_config.gattung)
         .nummer(zug_config.nummer)
+        .zuglauf(zug_config.zuglauf)
+        .fahrplan_gruppe(zug_config.fahrplan_gruppe)
         .fahrplan_datei(fahrplan_datei)
         .fahrzeug_varianten(FahrzeugVarianten::builder().build())
         .build();
@@ -292,6 +294,8 @@ mod tests {
         let config = ZugConfig {
             nummer: "10001".into(),
             gattung: "RB".into(),
+            zuglauf: "".into(),
+            fahrplan_gruppe: "".into(),
             meta_data: Some(MetaDataConfig {
                 path: meta_data_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
             }),
@@ -463,6 +467,8 @@ mod tests {
         let config = ZugConfig {
             nummer: "10001".into(),
             gattung: "RB".into(),
+            zuglauf: "".into(),
+            fahrplan_gruppe: "".into(),
             meta_data: Some(MetaDataConfig {
                 path: meta_data_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
             }),
@@ -722,6 +728,8 @@ mod tests {
         let config = ZugConfig {
             nummer: "10001".into(),
             gattung: "RB".into(),
+            zuglauf: "".into(),
+            fahrplan_gruppe: "A - B".into(),
             meta_data: Some(MetaDataConfig {
                 path: meta_data_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
             }),
@@ -760,6 +768,7 @@ mod tests {
                         .nummer("10001".into())
                         .mindest_bremshundertstel(1.4)
                         .zuglauf("ADorf - BDorf".into())
+                        .fahrplan_gruppe("A - B".into())
                         .fahrplan_datei(Datei::builder().dateiname(prejoined_fpn_path.zusi_path().clone()).nur_info(true).build())
                         .fahrstrassen_name("Aufgleispunkt -> Hildesheim Hbf F".into())
                         .fahrplan_eintraege(vec![
@@ -808,6 +817,7 @@ mod tests {
                         .nummer("10003".into())
                         .mindest_bremshundertstel(1.4)
                         .zuglauf("ADorf - BDorf".into())
+                        .fahrplan_gruppe("A - B".into())
                         .fahrplan_datei(Datei::builder().dateiname(prejoined_fpn_path.zusi_path().clone()).nur_info(true).build())
                         .fahrstrassen_name("Aufgleispunkt -> Hildesheim Hbf F".into())
                         .fahrplan_eintraege(vec![
