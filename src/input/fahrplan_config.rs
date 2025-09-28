@@ -1,5 +1,6 @@
 pub mod non_default_fahrzeug_verband_aktion;
 
+use serde_helpers::with::bool_as_int::bool_as_int_format;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
@@ -101,6 +102,9 @@ pub struct StartFahrzeugVerbandAktion {
     #[serde(rename = "@aktion")]
     pub aktion: NonDefaultFahrzeugVerbandAktion,
 
+    #[serde(rename = "@wendeSignal", with = "bool_as_int_format", default, skip_serializing_if = "IsDefault::is_default")]
+    pub wende_signal: bool,
+
     #[serde(rename = "@wendeSignalAbstand", default, skip_serializing_if = "IsDefault::is_default")]
     pub wende_signal_abstand: f32,
 }
@@ -152,7 +156,7 @@ mod tests {
                         </RoutePart>
                         <RoutePart>
                             <TrainConfigByNummer nummer="10000"/>
-                            <StartFahrzeugVerbandAktion aktion="2" wendeSignalAbstand="200"/>
+                            <StartFahrzeugVerbandAktion aktion="2" wendeSignal="1" wendeSignalAbstand="200"/>
                         </RoutePart>
                     </Route>
                     <RollingStock path="./path/to/rolling-stock.trn"/>
@@ -202,6 +206,7 @@ mod tests {
                                     source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
                                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                                         aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                                        wende_signal: true,
                                         wende_signal_abstand: 200.,
                                     }),
                                     time_fix: None,

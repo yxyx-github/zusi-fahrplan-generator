@@ -445,6 +445,7 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                         aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                        wende_signal: false,
                         wende_signal_abstand: 0.,
                     }),
                     time_fix: None,

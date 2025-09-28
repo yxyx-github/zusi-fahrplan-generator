@@ -586,6 +586,7 @@ mod tests {
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                     aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal: false,
                     wende_signal_abstand: 30.,
                 }),
             },
@@ -926,6 +927,7 @@ mod tests {
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                     aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal: false,
                     wende_signal_abstand: 30.,
                 }),
             },
@@ -1360,6 +1362,7 @@ mod tests {
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                     aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal: false,
                     wende_signal_abstand: 0.,
                 }),
             },
