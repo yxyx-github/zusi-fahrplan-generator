@@ -249,11 +249,13 @@ mod tests {
             parts: vec![
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:49:50) }),
                     apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
@@ -268,6 +270,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()
@@ -338,11 +341,13 @@ mod tests {
             parts: vec![
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
@@ -377,11 +382,13 @@ mod tests {
             parts: vec![
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: empty_trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
@@ -441,11 +448,13 @@ mod tests {
             parts: vec![
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: None,
                     apply_schedule: None,
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: None,
                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:49:50) }),
                     apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
@@ -460,6 +469,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: Some(0.0),
                 gnt_spalte: Some(false),
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder()

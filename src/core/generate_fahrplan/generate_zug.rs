@@ -303,6 +303,7 @@ mod tests {
                 parts: vec![
                     RoutePart {
                         source: RoutePartSource::TrainFileByPath { path: route_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                        start_fahrzeug_verband_aktion: None,
                         time_fix: None,
                         apply_schedule: None,
                     },
@@ -476,6 +477,7 @@ mod tests {
                 parts: vec![
                     RoutePart {
                         source: RoutePartSource::TrainFileByPath { path: route_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                        start_fahrzeug_verband_aktion: None,
                         time_fix: None,
                         apply_schedule: None,
                     },
@@ -737,6 +739,7 @@ mod tests {
                 parts: vec![
                     RoutePart {
                         source: RoutePartSource::TrainFileByPath { path: route_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                        start_fahrzeug_verband_aktion: None,
                         time_fix: None,
                         apply_schedule: None,
                     },

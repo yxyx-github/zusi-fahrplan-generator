@@ -52,11 +52,13 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
     if current.has_time_fix && new.has_time_fix {
         return Err(MergeRoutePartsError::MoreThanOneTimeFix);
     }
-    if can_merge(current.fahrplan_eintraege.last().unwrap(), new.fahrplan_eintraege.first().unwrap()) {
-        // TODO: warn about not merge relevant differences?
+    let wende = new.start_data.fahrzeug_verband_aktion.is_some();
+    if can_merge(current.fahrplan_eintraege.last().unwrap(), new.fahrplan_eintraege.first().unwrap(), wende) {
+        // TODO: warn about not merge relevant differences if both values are not defaults?
         let current_last = current.fahrplan_eintraege.pop().unwrap(); // already checked by generate_route_part()
         let first_new = new.fahrplan_eintraege.first().unwrap(); // already checked by generate_route_part()
-        let time_diff = get_time_diff_for_merge(&current_last, first_new).unwrap(); // already checked by can_merge()
+        let betriebsstelle = first_new.betriebsstelle.clone(); // TODO: do not clone
+        let time_diff = get_time_diff_for_merge(&current_last, first_new, wende).unwrap(); // already checked by can_merge()
 
         let (items, time_diff) = if new.has_time_fix {
             current.has_time_fix = true;
@@ -66,10 +68,22 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
         };
         delay_fahrplan_eintraege(&mut items.fahrplan_eintraege, time_diff);
 
+        if let Some(fahrzeug_verband_aktion) = new.start_data.fahrzeug_verband_aktion {
+            current.fahrplan_eintraege.push(
+                FahrplanEintrag {
+                    fahrzeug_verband_aktion: fahrzeug_verband_aktion.aktion,
+                    fahrzeug_verband_aktion_wende_signal: true,
+                    fahrzeug_verband_aktion_wende_signal_abstand: fahrzeug_verband_aktion.wende_signal_abstand,
+                    ..current_last
+                },
+            );
+            let first_new = new.fahrplan_eintraege.first_mut().unwrap(); // already checked by generate_route_part()
+            first_new.ankunft = first_new.abfahrt;
+        }
         current.fahrplan_eintraege.append(&mut new.fahrplan_eintraege);
         
         if !current.fahrplan_zeilen.is_empty() && !new.fahrplan_zeilen.is_empty() {
-            current.fahrplan_zeilen = concat_buchfahrplaene(current.fahrplan_zeilen, new.fahrplan_zeilen, &current_last.betriebsstelle)?;
+            current.fahrplan_zeilen = concat_buchfahrplaene(current.fahrplan_zeilen, new.fahrplan_zeilen, &betriebsstelle, wende)?;
             update_buchfahrplan(&current.fahrplan_eintraege, &mut current.fahrplan_zeilen)?;
         }
         if new.start_data.gnt_spalte.is_some_and(|gnt_spalte| gnt_spalte) {
@@ -85,23 +99,32 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
     }
 }
 
-fn can_merge(first: &FahrplanEintrag, second: &FahrplanEintrag) -> bool {
+fn can_merge(first: &FahrplanEintrag, second: &FahrplanEintrag, wende: bool) -> bool {
     first.betriebsstelle == second.betriebsstelle &&
-        first.fahrplan_signal_eintraege == second.fahrplan_signal_eintraege &&
+        (wende || first.fahrplan_signal_eintraege == second.fahrplan_signal_eintraege) &&
         first.abfahrt.is_some() && second.abfahrt.is_some() &&
-        first.ankunft.is_some() == second.ankunft.is_some()
+        first.ankunft.is_some() == second.ankunft.is_some() &&
+        (!wende || first.ankunft.is_some())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NoTimes;
 
-fn get_time_diff_for_merge(first: &FahrplanEintrag, second: &FahrplanEintrag) -> Result<Duration, NoTimes> {
-    if let (Some(first), Some(second)) = (first.ankunft, second.ankunft) {
-        Ok(first - second)
-    } else if let (Some(first), Some(second)) = (first.abfahrt, second.abfahrt) {
-        Ok(first - second)
+fn get_time_diff_for_merge(first: &FahrplanEintrag, second: &FahrplanEintrag, wende: bool) -> Result<Duration, NoTimes> {
+    if wende {
+        if let (Some(first), Some(second)) = (first.abfahrt, second.abfahrt) {
+            Ok(first - second)
+        } else {
+            Err(NoTimes)
+        }
     } else {
-        Err(NoTimes)
+        if let (Some(first), Some(second)) = (first.ankunft, second.ankunft) {
+            Ok(first - second)
+        } else if let (Some(first), Some(second)) = (first.abfahrt, second.abfahrt) {
+            Ok(first - second)
+        } else {
+            Err(NoTimes)
+        }
     }
 }
 
@@ -115,11 +138,14 @@ mod tests {
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_km::FahrplanKm;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_name::FahrplanName;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_name_rechts::FahrplanNameRechts;
+    use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_richtungswechsel::FahrplanRichtungswechsel;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_signal_typ::FahrplanSignalTyp;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_v_max::FahrplanVMax;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
+    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
+    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
 
     #[test]
     fn test_merge_routes_by_abfahrt() {
@@ -131,6 +157,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -154,6 +181,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
@@ -175,6 +203,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -206,6 +235,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -223,6 +253,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:48:20))).build(),
@@ -240,6 +271,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -264,6 +296,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -281,6 +314,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:48:20))).build(),
@@ -298,6 +332,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:38:30))).build(),
@@ -322,6 +357,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -345,6 +381,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
@@ -366,6 +403,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -397,6 +435,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -414,6 +453,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -431,6 +471,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -455,6 +496,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -472,6 +514,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:48:20))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -489,6 +532,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:40:30))).build(),
@@ -496,6 +540,104 @@ mod tests {
                 FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
             ],
             has_time_fix: true,
+            fahrplan_zeilen: vec![],
+            mindest_bremshundertstel: 0.,
+        };
+
+        assert_eq!(merge_routes(current, new).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_merge_routes_by_ankunft_with_wende() {
+        let current = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("BDorf".into())
+                    .ankunft(Some(datetime!(2020-09-09 07:49:20)))
+                    .abfahrt(Some(datetime!(2020-09-09 07:51:20)))
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
+                        FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
+                    ])
+                    .build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![],
+            mindest_bremshundertstel: 0.,
+        };
+        let new = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal_abstand: 30.,
+                }),
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder()
+                    .betriebsstelle("BDorf".into())
+                    .ankunft(Some(datetime!(2020-09-09 07:50:20)))
+                    .abfahrt(Some(datetime!(2020-09-09 07:55:20)))
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("C".into()).build(),
+                        FahrplanSignalEintrag::builder().fahrplan_signal("D".into()).build(),
+                    ]).build(),
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:57:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![],
+            mindest_bremshundertstel: 0.,
+        };
+        let expected = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("BDorf".into())
+                    .ankunft(Some(datetime!(2020-09-09 07:49:20)))
+                    .abfahrt(Some(datetime!(2020-09-09 07:51:20)))
+                    .fahrzeug_verband_aktion(FahrzeugVerbandAktion::Fueherstandswechsel)
+                    .fahrzeug_verband_aktion_wende_signal(true)
+                    .fahrzeug_verband_aktion_wende_signal_abstand(30.)
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
+                        FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
+                    ])
+                    .build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("BDorf".into())
+                    .ankunft(Some(datetime!(2020-09-09 07:51:20)))
+                    .abfahrt(Some(datetime!(2020-09-09 07:51:20)))
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("C".into()).build(),
+                        FahrplanSignalEintrag::builder().fahrplan_signal("D".into()).build(),
+                    ]).build(),
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:53:20))).build(),
+            ],
+            has_time_fix: false,
             fahrplan_zeilen: vec![],
             mindest_bremshundertstel: 0.,
         };
@@ -513,6 +655,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("XDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:39:30))).build(),
@@ -536,6 +679,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).fahrplan_signal_eintraege(vec![
@@ -563,6 +707,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:47:20))).build(),
@@ -579,6 +724,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:47:20))).build(),
@@ -601,6 +747,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -644,6 +791,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 08:49:00))).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -685,6 +833,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -733,6 +882,127 @@ mod tests {
     }
 
     #[test]
+    fn test_merge_routes_by_ankunft_with_buchfahrplan_with_wende() {
+        let current = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).build(),
+                FahrplanEintrag::builder().betriebsstelle("BDorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:20))).abfahrt(Some(datetime!(2020-09-09 07:51:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32883.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32983.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.8907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:54:50)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:54:50)).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+        let new = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal_abstand: 30.,
+                }),
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("BDorf".into()).ankunft(Some(datetime!(2020-09-09 07:50:20))).abfahrt(Some(datetime!(2020-09-09 07:55:20))).build(),
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:57:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(2983.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.8907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:58:40)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:58:50)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(3083.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:59:50)).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+        let expected = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("BDorf".into())
+                    .ankunft(Some(datetime!(2020-09-09 07:49:20)))
+                    .abfahrt(Some(datetime!(2020-09-09 07:51:20)))
+                    .fahrzeug_verband_aktion(FahrzeugVerbandAktion::Fueherstandswechsel)
+                    .fahrzeug_verband_aktion_wende_signal(true)
+                    .fahrzeug_verband_aktion_wende_signal_abstand(30.)
+                    .build(),
+                FahrplanEintrag::builder().betriebsstelle("BDorf".into()).ankunft(Some(datetime!(2020-09-09 07:51:20))).abfahrt(Some(datetime!(2020-09-09 07:51:20))).build(),
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:53:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32883.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:49:10)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32983.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.8907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2020-09-09 07:49:20)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:51:20)).build()))
+                    .fahrplan_richtungswechsel(Some(FahrplanRichtungswechsel::builder().build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(33083.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2020-09-09 07:53:20)).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+
+        assert_eq!(merge_routes(current, new).unwrap(), expected);
+    }
+
+    #[test]
     fn test_merge_routes_by_abfahrt_with_buchfahrplan() {
         let current = ResolvedRoutePart {
             start_data: RouteStartData {
@@ -742,6 +1012,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -785,6 +1056,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -826,6 +1098,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -882,6 +1155,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -925,6 +1199,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -977,6 +1252,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).fahrplan_signal_eintraege(vec![
@@ -1009,6 +1285,7 @@ mod tests {
                 speed_anfang: 0.0,
                 km_start: None,
                 gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
             },
             fahrplan_eintraege: vec![
                 FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
@@ -1040,6 +1317,80 @@ mod tests {
     }
 
     #[test]
+    fn test_cannot_merge_routes_by_abfahrt_with_wende() {
+        let current = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "X -> A".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:10))).build(),
+                FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32883.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32983.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.8907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:54:50)).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+        let new = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "A -> B".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal_abstand: 0.,
+                }),
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder().betriebsstelle("BDorf".into()).abfahrt(Some(datetime!(2020-09-09 08:56:30))).build(),
+                FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 08:49:20))).build(),
+            ],
+            has_time_fix: false,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32983.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.8907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("BDorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:54:50)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32883.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("ADorf".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:52:50)).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+
+        assert!(matches!(
+            merge_routes(current, new).unwrap_err(),
+            MergeRoutePartsError::NonConsecutiveRouteParts,
+        ));
+    }
+
+    #[test]
     fn test_can_merge() {
         assert!(can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).fahrplan_signal_eintraege(vec![
@@ -1050,6 +1401,7 @@ mod tests {
                 FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
                 FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
             ]).build(),
+            false,
         ));
 
         assert!(!can_merge(
@@ -1061,6 +1413,7 @@ mod tests {
                 FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
                 FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
             ]).build(),
+            false,
         ));
         assert!(!can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).fahrplan_signal_eintraege(vec![
@@ -1071,6 +1424,7 @@ mod tests {
                 FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
                 FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
             ]).build(),
+            false,
         ));
         assert!(!can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).fahrplan_signal_eintraege(vec![
@@ -1080,28 +1434,70 @@ mod tests {
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:40))).fahrplan_signal_eintraege(vec![
                 FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
             ]).build(),
+            false,
         ));
 
         assert!(can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:10))).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:20))).abfahrt(Some(datetime!(2020-09-09 07:49:50))).build(),
+            false,
         ));
         assert!(can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:50))).build(),
+            false,
         ));
 
         assert!(!can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:30))).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            false,
+        ));
+        assert!(!can_merge(
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:30))).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            false,
         ));
         assert!(!can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:30))).build(),
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            false,
         ));
         assert!(!can_merge(
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).build(),
             &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).build(),
+            false,
+        ));
+
+        assert!(can_merge(
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:10))).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).ankunft(Some(datetime!(2020-09-09 07:49:20))).abfahrt(Some(datetime!(2020-09-09 07:49:50))).build(),
+            true,
+        ));
+        assert!(can_merge(
+            &FahrplanEintrag::builder()
+                .betriebsstelle("ADorf".into())
+                .ankunft(Some(datetime!(2020-09-09 07:49:10)))
+                .abfahrt(Some(datetime!(2020-09-09 07:49:30)))
+                .fahrplan_signal_eintraege(vec![
+                    FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
+                    FahrplanSignalEintrag::builder().fahrplan_signal("B".into()).build(),
+                ]).build(),
+            &FahrplanEintrag::builder()
+                .betriebsstelle("ADorf".into())
+                .ankunft(Some(datetime!(2020-09-09 07:49:10)))
+                .abfahrt(Some(datetime!(2020-09-09 07:49:40)))
+                .fahrplan_signal_eintraege(vec![
+                    FahrplanSignalEintrag::builder().fahrplan_signal("C".into()).build(),
+                    FahrplanSignalEintrag::builder().fahrplan_signal("D".into()).build(),
+                ]).build(),
+            true,
+        ));
+
+        assert!(!can_merge(
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:30))).build(),
+            &FahrplanEintrag::builder().betriebsstelle("ADorf".into()).abfahrt(Some(datetime!(2020-09-09 07:49:50))).build(),
+            true,
         ));
     }
 
@@ -1110,14 +1506,32 @@ mod tests {
         assert_eq!(
             get_time_diff_for_merge(
                 &FahrplanEintrag::builder().ankunft(Some(datetime!(2023-09-06 06:36:40))).abfahrt(Some(datetime!(2023-09-06 06:37:40))).build(),
-                &FahrplanEintrag::builder().ankunft(Some(datetime!(2023-09-06 06:32:40))).abfahrt(Some(datetime!(2023-09-06 06:32:50))).build(),
+                &FahrplanEintrag::builder().ankunft(Some(datetime!(2023-09-06 06:32:40))).abfahrt(Some(datetime!(2023-09-06 06:32:40))).build(),
+                false,
             ).unwrap(),
             Duration::minutes(4),
         );
         assert_eq!(
             get_time_diff_for_merge(
+                &FahrplanEintrag::builder().ankunft(Some(datetime!(2023-09-06 06:36:40))).abfahrt(Some(datetime!(2023-09-06 06:37:40))).build(),
+                &FahrplanEintrag::builder().ankunft(Some(datetime!(2023-09-06 06:32:40))).abfahrt(Some(datetime!(2023-09-06 06:32:40))).build(),
+                true,
+            ).unwrap(),
+            Duration::minutes(5),
+        );
+        assert_eq!(
+            get_time_diff_for_merge(
                 &FahrplanEintrag::builder().abfahrt(Some(datetime!(2023-09-06 06:37:40))).build(),
                 &FahrplanEintrag::builder().abfahrt(Some(datetime!(2023-09-06 06:32:50))).build(),
+                false,
+            ).unwrap(),
+            Duration::minutes(4) + Duration::seconds(50),
+        );
+        assert_eq!(
+            get_time_diff_for_merge(
+                &FahrplanEintrag::builder().abfahrt(Some(datetime!(2023-09-06 06:37:40))).build(),
+                &FahrplanEintrag::builder().abfahrt(Some(datetime!(2023-09-06 06:32:50))).build(),
+                true,
             ).unwrap(),
             Duration::minutes(4) + Duration::seconds(50),
         );
@@ -1125,6 +1539,15 @@ mod tests {
             get_time_diff_for_merge(
                 &FahrplanEintrag::builder().build(),
                 &FahrplanEintrag::builder().build(),
+                false,
+            ).unwrap_err(),
+            NoTimes,
+        );
+        assert_eq!(
+            get_time_diff_for_merge(
+                &FahrplanEintrag::builder().build(),
+                &FahrplanEintrag::builder().build(),
+                true,
             ).unwrap_err(),
             NoTimes,
         );

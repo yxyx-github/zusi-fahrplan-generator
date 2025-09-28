@@ -2,6 +2,7 @@ use crate::core::lib::generated_zug::RawGeneratedZug;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
+use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
 
 // TODO: refactor using builder?
 #[derive(Debug, Clone, PartialEq)]
@@ -53,6 +54,7 @@ pub struct RouteStartData {
     pub speed_anfang: f32,
     pub km_start: Option<f32>,
     pub gnt_spalte: Option<bool>,
+    pub fahrzeug_verband_aktion: Option<StartFahrzeugVerbandAktion>,
 }
 
 pub fn apply_resolved_route_to_zug(route: ResolvedRoute, zug: &mut RawGeneratedZug) {

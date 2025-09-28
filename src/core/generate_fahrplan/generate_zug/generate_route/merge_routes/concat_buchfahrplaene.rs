@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use thiserror::Error;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_name::FahrplanName;
+use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_richtungswechsel::FahrplanRichtungswechsel;
 use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::FahrplanZeile;
 
 #[derive(Error, Debug, Clone, PartialEq, Eq)]
@@ -10,7 +11,7 @@ pub enum ConcatBuchfahrplaeneError {
     NonConsecutiveBuchfahrplaene,
 }
 
-pub fn concat_buchfahrplaene(mut current: Vec<FahrplanZeile>, new: Vec<FahrplanZeile>, betriebsstelle: &str) -> Result<Vec<FahrplanZeile>, ConcatBuchfahrplaeneError> {
+pub fn concat_buchfahrplaene(mut current: Vec<FahrplanZeile>, new: Vec<FahrplanZeile>, betriebsstelle: &str, wende: bool) -> Result<Vec<FahrplanZeile>, ConcatBuchfahrplaeneError> {
     let mut new: VecDeque<_> = new.into();
     while let Some(zeile) = current.last() {
         match zeile {
@@ -46,6 +47,9 @@ pub fn concat_buchfahrplaene(mut current: Vec<FahrplanZeile>, new: Vec<FahrplanZ
             new.front_mut().unwrap().fahrplan_abfahrt = current_last.fahrplan_abfahrt;
         }
         // TODO: check if FplAnk.FplEintrag needs to be adjusted
+        if wende {
+            new.front_mut().unwrap().fahrplan_richtungswechsel = Some(FahrplanRichtungswechsel::builder().build());
+        }
         new.iter_mut().for_each(|zeile| zeile.fahrplan_laufweg += laufweg_diff);
         current.append(&mut new.into());
         Ok(current)
@@ -311,7 +315,84 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap(),
+            expected_buchfahrplan,
+        );
+    }
+
+    #[test]
+    fn test_concat_buchfahrplaene_with_wende() {
+        let buchfahrplan_1 = vec![
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(24631.027)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(29134.139)
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:49:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:49:50)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(32220.396)
+                .fahrplan_km(vec![FahrplanKm::builder().km(12.128).build()])
+                .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(7).build()))
+                .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("E 60".into()).build()))
+                .build(),
+        ];
+
+        let buchfahrplan_2 = vec![
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(29134.139)
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:39:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(33637.251)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 10:06:00)).build()))
+                .build(),
+        ];
+
+        let expected_buchfahrplan = vec![
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(24631.027)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:00)).build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(29134.139)
+                .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:39:00)).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 09:40:50)).build()))
+                .fahrplan_richtungswechsel(Some(FahrplanRichtungswechsel::builder().build()))
+                .build(),
+            FahrplanZeile::builder()
+                .fahrplan_regelgleis_gegengleis(1)
+                .fahrplan_laufweg(33637.251)
+                .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 10:06:00)).build()))
+                .build(),
+        ];
+
+        assert_eq!(
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Osterwald Hp", true).unwrap(),
             expected_buchfahrplan,
         );
     }
@@ -426,7 +507,7 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap(),
             expected_buchfahrplan,
         );
     }
@@ -541,7 +622,7 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap(),
             expected_buchfahrplan,
         );
     }
@@ -609,7 +690,7 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap(),
             expected_buchfahrplan,
         );
     }
@@ -659,7 +740,7 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap_err(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap_err(),
             ConcatBuchfahrplaeneError::NonConsecutiveBuchfahrplaene,
         );
     }
@@ -707,7 +788,7 @@ mod tests {
         ];
 
         assert_eq!(
-            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen").unwrap_err(),
+            concat_buchfahrplaene(buchfahrplan_1, buchfahrplan_2, "Voldagsen", false).unwrap_err(),
             ConcatBuchfahrplaeneError::NonConsecutiveBuchfahrplaene,
         );
     }

@@ -1,10 +1,11 @@
-use serde_helpers::default::IsDefault;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
+use serde_helpers::default::IsDefault;
 use serde_helpers::with::date_time::date_time_format;
 use std::path::PathBuf;
 use time::PrimitiveDateTime;
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
@@ -69,6 +70,9 @@ pub struct RoutePart {
     #[serde(rename = "$value")]
     pub source: RoutePartSource,
 
+    #[serde(rename = "StartFahrzeugVerbandAktion", default, skip_serializing_if = "Option::is_none")]
+    pub start_fahrzeug_verband_aktion: Option<StartFahrzeugVerbandAktion>,
+
     #[serde(rename = "TimeFix", default, skip_serializing_if = "Option::is_none")]
     pub time_fix: Option<RouteTimeFix>,
 
@@ -87,6 +91,16 @@ pub enum RoutePartSource {
         #[serde(rename = "@nummer")]
         nummer: String,
     },
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct StartFahrzeugVerbandAktion {
+    #[serde(rename = "@aktion")]
+    pub aktion: FahrzeugVerbandAktion,
+
+    #[serde(rename = "@wendeSignalAbstand", default, skip_serializing_if = "IsDefault::is_default")]
+    pub wende_signal_abstand: f32,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -136,6 +150,7 @@ mod tests {
                         </RoutePart>
                         <RoutePart>
                             <TrainConfigByNummer nummer="10000"/>
+                            <StartFahrzeugVerbandAktion aktion="2" wendeSignalAbstand="200"/>
                         </RoutePart>
                     </Route>
                     <RollingStock path="./path/to/rolling-stock.trn"/>
@@ -177,11 +192,16 @@ mod tests {
                             parts: vec![
                                 RoutePart {
                                     source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
+                                    start_fahrzeug_verband_aktion: None,
                                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
                                     apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
                                 },
                                 RoutePart {
                                     source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
+                                    start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                                        aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                                        wende_signal_abstand: 200.,
+                                    }),
                                     time_fix: None,
                                     apply_schedule: None,
                                 },
@@ -219,6 +239,7 @@ mod tests {
                             parts: vec![
                                 RoutePart {
                                     source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
+                                    start_fahrzeug_verband_aktion: None,
                                     time_fix: None,
                                     apply_schedule: None,
                                 },
