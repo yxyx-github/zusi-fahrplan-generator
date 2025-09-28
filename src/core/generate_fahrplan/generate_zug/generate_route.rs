@@ -9,6 +9,7 @@ use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{RouteConfig, RoutePartSource};
 use std::collections::VecDeque;
 use thiserror::Error;
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
 
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateRouteError {
@@ -19,6 +20,9 @@ pub enum GenerateRouteError {
         #[source]
         error: GenerateRoutePartError,
     },
+
+    #[error("The first route part must not have StartFahrzeugVerbandAktion set.")]
+    IllegalFahrzeugVerbandAktion,
 
     #[error("No route parts were found but at least one is required.")]
     NoRouteParts,
@@ -40,6 +44,9 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<Reso
             })
         ).collect::<Result<VecDeque<_>, _>>()?;
     let generated_route = resolved_route_parts.pop_front().ok_or(GenerateRouteError::NoRouteParts)?;
+    if generated_route.start_data.fahrzeug_verband_aktion.as_ref().is_some_and(|a| a.aktion != FahrzeugVerbandAktion::Keine) {
+        return Err(GenerateRouteError::IllegalFahrzeugVerbandAktion);
+    }
     resolved_route_parts
         .into_iter()
         .try_fold(
@@ -53,7 +60,7 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<Reso
 mod tests {
     use super::*;
     use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
-    use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RouteTimeFix, RouteTimeFixType};
+    use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RouteTimeFix, RouteTimeFixType, StartFahrzeugVerbandAktion};
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
@@ -68,6 +75,7 @@ mod tests {
     use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
+    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
 
     const TRN1: &str = r#"
@@ -418,6 +426,37 @@ mod tests {
         };
 
         assert_eq!(generate_route(&env, route_config).unwrap_err(), GenerateRouteError::NoRouteParts);
+    }
+
+    #[test]
+    fn test_cannot_generate_route_with_illegal_fahrzeug_verband_aktion() {
+        let tmp_dir = tempdir().unwrap();
+
+        let trn_path = tmp_dir.path().join("00001.trn");
+        fs::write(&trn_path, TRN1).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_config = RouteConfig {
+            parts: vec![
+                RoutePart {
+                    source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+                    start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                        aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                        wende_signal_abstand: 0.,
+                    }),
+                    time_fix: None,
+                    apply_schedule: None,
+                },
+            ],
+        };
+
+        assert_eq!(generate_route(&env, route_config).unwrap_err(), GenerateRouteError::IllegalFahrzeugVerbandAktion);
+
+        assert_eq!(fs::read_to_string(trn_path).unwrap(), TRN1);
     }
 
     #[test]
