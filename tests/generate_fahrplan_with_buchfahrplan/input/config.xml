@@ -6,11 +6,11 @@
             <Route>
                 <RoutePart>
                     <TrainFileByPath path="./route-part-1.trn"/>
+                    <ApplySchedule path="./route-part-1-2.schedule.xml"/>
                     <TimeFix type="StartAbf" value="2023-06-20 08:41:40"/>
                 </RoutePart>
                 <RoutePart>
                     <TrainFileByPath path="./route-part-2.trn"/>
-                    <ApplySchedule path="./route-part-1-2.schedule.xml"/>
                 </RoutePart>
             </Route>
             <RollingStock path="./rolling-stock-a.trn"/>

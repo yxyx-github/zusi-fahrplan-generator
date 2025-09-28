@@ -4,7 +4,7 @@
     <Zug Gattung="RB" Nummer="20000" Zuglauf="ADorf - BDorf" BremsstellungZug="3" MBrh="1.6" FahrplanGruppe="Gruppe AB" FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
         <Datei Dateiname="out/my-fahrplan.fpn" NurInfo="1"/>
         <BuchfahrplanRohDatei Dateiname="out/my-fahrplan/RB20000.timetable.xml"/>
-        <FahrplanEintrag Ank="2023-06-20 08:39:00" Abf="2023-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+        <FahrplanEintrag Ank="2023-06-20 08:38:00" Abf="2023-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
             <FahrplanSignalEintrag FahrplanSignal="N1"/>
         </FahrplanEintrag>
         <FahrplanEintrag Abf="2023-06-20 08:45:00" Betrst="Mehle Hp"/>

@@ -258,13 +258,13 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: None,
-                    apply_schedule: None,
+                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:49:50) }),
-                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+                    apply_schedule: None,
                 },
             ],
         };
@@ -445,7 +445,7 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                         aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
-                        wende_signal: false,
+                        wende_signal: true,
                         wende_signal_abstand: 0.,
                     }),
                     time_fix: None,
@@ -489,13 +489,13 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: None,
-                    apply_schedule: None,
+                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:49:50) }),
-                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+                    apply_schedule: None,
                 },
             ],
         };

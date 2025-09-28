@@ -3,7 +3,7 @@
     <Info DateiTyp="Zug" Version="A.6" MinVersion="A.6"/>
     <Zug Gattung="RB" Nummer="20006" Zuglauf="ADorf - BDorf" FahrplanGruppe="Gruppe AB" FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
         <Datei Dateiname="out/my-fahrplan.fpn" NurInfo="1"/>
-        <FahrplanEintrag Ank="2023-06-20 14:39:00" Abf="2023-06-20 14:41:40" Signalvorlauf="180" Betrst="Elze">
+        <FahrplanEintrag Ank="2023-06-20 14:38:00" Abf="2023-06-20 14:41:40" Signalvorlauf="180" Betrst="Elze">
             <FahrplanSignalEintrag FahrplanSignal="N1"/>
         </FahrplanEintrag>
         <FahrplanEintrag Abf="2023-06-20 14:45:00" Betrst="Mehle Hp"/>
