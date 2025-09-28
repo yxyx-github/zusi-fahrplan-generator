@@ -52,7 +52,7 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
     if current.has_time_fix && new.has_time_fix {
         return Err(MergeRoutePartsError::MoreThanOneTimeFix);
     }
-    let wende = new.start_data.fahrzeug_verband_aktion.is_some();
+    let wende = new.start_data.fahrzeug_verband_aktion.as_ref().is_some();
     if can_merge(current.fahrplan_eintraege.last().unwrap(), new.fahrplan_eintraege.first().unwrap(), wende) {
         // TODO: warn about not merge relevant differences if both values are not defaults?
         let current_last = current.fahrplan_eintraege.pop().unwrap(); // already checked by generate_route_part()
@@ -71,7 +71,7 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
         if let Some(fahrzeug_verband_aktion) = new.start_data.fahrzeug_verband_aktion {
             current.fahrplan_eintraege.push(
                 FahrplanEintrag {
-                    fahrzeug_verband_aktion: fahrzeug_verband_aktion.aktion,
+                    fahrzeug_verband_aktion: fahrzeug_verband_aktion.aktion.into(),
                     fahrzeug_verband_aktion_wende_signal: true,
                     fahrzeug_verband_aktion_wende_signal_abstand: fahrzeug_verband_aktion.wende_signal_abstand,
                     ..current_last
@@ -132,6 +132,8 @@ fn get_time_diff_for_merge(first: &FahrplanEintrag, second: &FahrplanEintrag, we
 mod tests {
     use super::*;
     use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
+    use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
+    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
     use time::macros::datetime;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_abfahrt::FahrplanAbfahrt;
     use zusi_xml_lib::xml::zusi::buchfahrplan::fahrplan_zeile::fahrplan_ankunft::FahrplanAnkunft;
@@ -145,7 +147,6 @@ mod tests {
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
-    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
 
     #[test]
     fn test_merge_routes_by_abfahrt() {
@@ -584,7 +585,7 @@ mod tests {
                 km_start: None,
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                     wende_signal_abstand: 30.,
                 }),
             },
@@ -924,7 +925,7 @@ mod tests {
                 km_start: None,
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                     wende_signal_abstand: 30.,
                 }),
             },
@@ -1358,7 +1359,7 @@ mod tests {
                 km_start: None,
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                     wende_signal_abstand: 0.,
                 }),
             },

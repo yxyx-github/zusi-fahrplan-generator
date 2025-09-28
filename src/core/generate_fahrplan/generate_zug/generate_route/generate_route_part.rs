@@ -123,6 +123,9 @@ fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::lib::file_error::FileErrorKind;
+    use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
+    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
@@ -137,10 +140,7 @@ mod tests {
     use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
-    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
-    use crate::core::lib::file_error::FileErrorKind;
-    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
 
     const SCHEDULE: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -192,7 +192,7 @@ mod tests {
         let route_part = RoutePart {
             source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
             start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                 wende_signal_abstand: 0.,
             }),
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
@@ -208,7 +208,7 @@ mod tests {
                 km_start: None,
                 gnt_spalte: None,
                 fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                    aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                    aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                     wende_signal_abstand: 0.,
                 }),
             },

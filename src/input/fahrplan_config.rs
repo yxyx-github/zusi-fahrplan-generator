@@ -1,3 +1,5 @@
+pub mod non_default_fahrzeug_verband_aktion;
+
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
@@ -5,7 +7,7 @@ use serde_helpers::default::IsDefault;
 use serde_helpers::with::date_time::date_time_format;
 use std::path::PathBuf;
 use time::PrimitiveDateTime;
-use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
+use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
@@ -97,7 +99,7 @@ pub enum RoutePartSource {
 #[serde(deny_unknown_fields)]
 pub struct StartFahrzeugVerbandAktion {
     #[serde(rename = "@aktion")]
-    pub aktion: FahrzeugVerbandAktion,
+    pub aktion: NonDefaultFahrzeugVerbandAktion,
 
     #[serde(rename = "@wendeSignalAbstand", default, skip_serializing_if = "IsDefault::is_default")]
     pub wende_signal_abstand: f32,
@@ -199,7 +201,7 @@ mod tests {
                                 RoutePart {
                                     source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
                                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                                        aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                                        aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                                         wende_signal_abstand: 200.,
                                     }),
                                     time_fix: None,

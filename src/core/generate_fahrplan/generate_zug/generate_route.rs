@@ -9,7 +9,6 @@ use crate::input::environment::zusi_environment::ZusiEnvironment;
 use crate::input::fahrplan_config::{RouteConfig, RoutePartSource};
 use std::collections::VecDeque;
 use thiserror::Error;
-use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
 
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateRouteError {
@@ -44,7 +43,7 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<Reso
             })
         ).collect::<Result<VecDeque<_>, _>>()?;
     let generated_route = resolved_route_parts.pop_front().ok_or(GenerateRouteError::NoRouteParts)?;
-    if generated_route.start_data.fahrzeug_verband_aktion.as_ref().is_some_and(|a| a.aktion != FahrzeugVerbandAktion::Keine) {
+    if generated_route.start_data.fahrzeug_verband_aktion.as_ref().is_some() {
         return Err(GenerateRouteError::IllegalFahrzeugVerbandAktion);
     }
     resolved_route_parts
@@ -75,8 +74,8 @@ mod tests {
     use zusi_xml_lib::xml::zusi::lib::fahrplan_eintrag::FahrplanEintragsTyp;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
-    use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrzeug_verband_aktion::FahrzeugVerbandAktion;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
+    use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
 
     const TRN1: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
@@ -445,7 +444,7 @@ mod tests {
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
-                        aktion: FahrzeugVerbandAktion::Fueherstandswechsel,
+                        aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                         wende_signal_abstand: 0.,
                     }),
                     time_fix: None,
