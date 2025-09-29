@@ -1,5 +1,6 @@
 pub mod non_default_fahrzeug_verband_aktion;
 
+use serde_helpers::with::duration::duration_option_format;
 use serde_helpers::with::bool_as_int::bool_as_int_format;
 use crate::input::copy_delay_config::CopyDelayConfig;
 use crate::input::rolling_stock_config::RollingStockConfig;
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_helpers::default::IsDefault;
 use serde_helpers::with::date_time::date_time_format;
 use std::path::PathBuf;
-use time::PrimitiveDateTime;
+use time::{Duration, PrimitiveDateTime};
 use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -131,6 +132,12 @@ pub enum RouteTimeFixType {
 pub struct ApplySchedule {
     #[serde(rename = "@path")]
     pub path: PathBuf,
+
+    #[serde(rename = "@firstStopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
+    pub first_stop_time: Option<Duration>,
+
+    #[serde(rename = "@lastStopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
+    pub last_stop_time: Option<Duration>,
 }
 
 #[cfg(test)]
@@ -155,8 +162,12 @@ mod tests {
                             <ApplySchedule path="./path/to/a.schedule.xml"/>
                         </RoutePart>
                         <RoutePart>
-                            <TrainConfigByNummer nummer="10000"/>
+                            <TrainFileByPath path="./path/to/route-part.trn"/>
                             <StartFahrzeugVerbandAktion aktion="2" wendeSignal="1" wendeSignalAbstand="200"/>
+                            <ApplySchedule path="./path/to/b.schedule.xml" firstStopTime="00:04:00" lastStopTime="00:40:00"/>
+                        </RoutePart>
+                        <RoutePart>
+                            <TrainConfigByNummer nummer="10000"/>
                         </RoutePart>
                     </Route>
                     <RollingStock path="./path/to/rolling-stock.trn"/>
@@ -200,15 +211,29 @@ mod tests {
                                     source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
                                     start_fahrzeug_verband_aktion: None,
                                     time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2023-02-01 13:50:20) }),
-                                    apply_schedule: Some(ApplySchedule { path: "./path/to/a.schedule.xml".into() }),
+                                    apply_schedule: Some(ApplySchedule {
+                                        path: "./path/to/a.schedule.xml".into(),
+                                        first_stop_time: None,
+                                        last_stop_time: None,
+                                    }),
                                 },
                                 RoutePart {
-                                    source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
+                                    source: RoutePartSource::TrainFileByPath { path: "./path/to/route-part.trn".into() },
                                     start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
                                         aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
                                         wende_signal: true,
                                         wende_signal_abstand: 200.,
                                     }),
+                                    time_fix: None,
+                                    apply_schedule: Some(ApplySchedule {
+                                        path: "./path/to/b.schedule.xml".into(),
+                                        first_stop_time: Some(Duration::minutes(4)),
+                                        last_stop_time: Some(Duration::minutes(40)),
+                                    }),
+                                },
+                                RoutePart {
+                                    source: RoutePartSource::TrainConfigByNummer { nummer: "10000".into() },
+                                    start_fahrzeug_verband_aktion: None,
                                     time_fix: None,
                                     apply_schedule: None,
                                 },

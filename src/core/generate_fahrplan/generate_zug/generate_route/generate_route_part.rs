@@ -197,7 +197,11 @@ mod tests {
                 wende_signal_abstand: 0.,
             }),
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
-            apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+            apply_schedule: Some(ApplySchedule {
+                path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                first_stop_time: None,
+                last_stop_time: None,
+            }),
         };
 
         let expected = ResolvedRoutePart {
@@ -361,7 +365,11 @@ mod tests {
             source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
             start_fahrzeug_verband_aktion: None,
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:46:00) }),
-            apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+            apply_schedule: Some(ApplySchedule {
+                path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                first_stop_time: None,
+                last_stop_time: None,
+            }),
         };
 
         let expected = ResolvedRoutePart {
@@ -504,7 +512,11 @@ mod tests {
             source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
             start_fahrzeug_verband_aktion: None,
             time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
-            apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+            apply_schedule: Some(ApplySchedule {
+                path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                first_stop_time: None,
+                last_stop_time: None,
+            }),
         };
 
         let expected = ResolvedRoutePart {

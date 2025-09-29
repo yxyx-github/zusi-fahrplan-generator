@@ -258,7 +258,11 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: None,
-                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+                    apply_schedule: Some(ApplySchedule {
+                        path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                        first_stop_time: None,
+                        last_stop_time: None,
+                    }),
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
@@ -489,7 +493,11 @@ mod tests {
                     source: RoutePartSource::TrainFileByPath { path: trn1_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
                     start_fahrzeug_verband_aktion: None,
                     time_fix: None,
-                    apply_schedule: Some(ApplySchedule { path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() }),
+                    apply_schedule: Some(ApplySchedule {
+                        path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                        first_stop_time: None,
+                        last_stop_time: None,
+                    }),
                 },
                 RoutePart {
                     source: RoutePartSource::TrainFileByPath { path: trn2_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
