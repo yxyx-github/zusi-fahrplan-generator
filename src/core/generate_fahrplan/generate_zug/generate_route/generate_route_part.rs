@@ -9,7 +9,9 @@ use crate::input::schedule::Schedule;
 use serde_helpers::xml::FromXML;
 use std::path::PathBuf;
 use thiserror::Error;
+use time::Duration;
 use zusi_xml_lib::xml::zusi::lib::datei::Datei;
+use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum GenerateRoutePartError {
@@ -59,12 +61,13 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
     if resolved_route_part.fahrplan_eintraege.is_empty() {
         Err(GenerateRoutePartError::EmptyRoutePart)
     } else {
-        if let Some(ApplySchedule { path, .. }) = route_part.apply_schedule {
+        if let Some(ApplySchedule { path, first_stop_time, last_stop_time, .. }) = route_part.apply_schedule {
             let prejoined_path = env.path_to_prejoined_zusi_path(&path)
                 .map_err(|error| GenerateRoutePartError::ReadScheduleError { error })?;
             let schedule = Schedule::from_xml_file_by_path(prejoined_path.full_path())
                 .map_err(|error| GenerateRoutePartError::ReadRouteError { error: (prejoined_path.full_path(), error).into() })?;
             apply_schedule(&mut resolved_route_part.fahrplan_eintraege, &schedule)?;
+            adjust_environ_stop_times(&mut resolved_route_part, first_stop_time, last_stop_time)
         }
         if let Some(RouteTimeFix { fix_type, value }) = route_part.time_fix {
             let time_fix_diff = match fix_type {
@@ -83,6 +86,22 @@ pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Resu
         resolved_route_part.start_data.fahrzeug_verband_aktion = route_part.start_fahrzeug_verband_aktion;
 
         Ok(resolved_route_part)
+    }
+}
+
+fn adjust_environ_stop_times(resolved_route_part: &mut ResolvedRoutePart, first: Option<Duration>, last: Option<Duration>) {
+    // TODO: return error if stop_time is Some but ankunft or abfahrt is None?
+    if let (
+        Some(stop_time),
+        Some(FahrplanEintrag { ankunft: Some(ankunft), abfahrt: Some(abfahrt), .. })
+    ) = (first, resolved_route_part.fahrplan_eintraege.first_mut()) {
+        *ankunft = *abfahrt - stop_time;
+    }
+    if let (
+        Some(stop_time),
+        Some(FahrplanEintrag { ankunft: Some(ankunft), abfahrt: Some(abfahrt), .. })
+    ) = (last, resolved_route_part.fahrplan_eintraege.last_mut()) {
+        *abfahrt = *ankunft + stop_time;
     }
 }
 
@@ -269,6 +288,122 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_route_part_with_environ_stop_times() {
+        const TRN: &str = r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Zusi>
+                <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+                <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                    <Datei/>
+                    <FahrplanEintrag Ank="2024-06-20 08:39:00" Abf="2024-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+                        <FahrplanSignalEintrag FahrplanSignal="N1"/>
+                    </FahrplanEintrag>
+                    <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
+                    <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                    <FahrplanEintrag Betrst="Voldagsen" FplEintrag="1">
+                        <FahrplanSignalEintrag FahrplanSignal="A"/>
+                    </FahrplanEintrag>
+                    <FahrplanEintrag Ank="2024-06-20 08:52:10" Abf="2024-06-20 08:52:50" Signalvorlauf="160" Betrst="Voldagsen">
+                        <FahrplanSignalEintrag FahrplanSignal="N2"/>
+                    </FahrplanEintrag>
+                    <FahrzeugVarianten/>
+                </Zug>
+            </Zusi>
+        "#;
+
+        let tmp_dir = tempdir().unwrap();
+
+        let trn_path = tmp_dir.path().join("00000.trn");
+        fs::write(&trn_path, TRN).unwrap();
+
+        let schedule_path = tmp_dir.path().join("00000.schedule.xml");
+        fs::write(&schedule_path, SCHEDULE).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_part = RoutePart {
+            source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+            start_fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                wende_signal: true,
+                wende_signal_abstand: 0.,
+            }),
+            time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:42:40) }),
+            apply_schedule: Some(ApplySchedule {
+                path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                first_stop_time: Some(Duration::minutes(3) + Duration::seconds(40)),
+                last_stop_time: Some(Duration::minutes(1)),
+            }),
+        };
+
+        let expected = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: None,
+                gnt_spalte: None,
+                fahrzeug_verband_aktion: Some(StartFahrzeugVerbandAktion {
+                    aktion: NonDefaultFahrzeugVerbandAktion::Fueherstandswechsel,
+                    wende_signal: true,
+                    wende_signal_abstand: 0.,
+                }),
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:39:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:42:40)))
+                    .signal_vorlauf(180.)
+                    .betriebsstelle("Elze".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N1".into()).build(),
+                    ])
+                    .build(),
+                FahrplanEintrag::builder()
+                    .abfahrt(Some(datetime!(2024-06-20 08:46:00)))
+                    .betriebsstelle("Mehle Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:49:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:49:50)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Osterwald Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .betriebsstelle("Voldagsen".into())
+                    .fahrplan_eintrag(FahrplanEintragsTyp::Hilfseintrag)
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("A".into()).build(),
+                    ])
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:53:20)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:54:20)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Voldagsen".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N2".into()).build(),
+                    ])
+                    .build(),
+            ],
+            has_time_fix: true,
+            fahrplan_zeilen: vec![],
+            mindest_bremshundertstel: 0.,
+        };
+
+        let resolved_route_part = generate_route_part(&env, route_part).unwrap();
+
+        assert_eq!(resolved_route_part, expected);
+
+        assert_eq!(fs::read_to_string(trn_path).unwrap(), TRN);
+        assert_eq!(fs::read_to_string(schedule_path).unwrap(), SCHEDULE);
+    }
+
+    #[test]
     fn test_generate_route_part_with_non_existing_trn_file() {
         let tmp_dir = tempdir().unwrap();
 
@@ -423,6 +558,174 @@ mod tests {
                     .fahrplan_km(vec![FahrplanKm::builder().km(12.128).build()])
                     .fahrplan_signal_typ(Some(FahrplanSignalTyp::builder().fahrplan_signal_typ_nummer(7).build()))
                     .fahrplan_name_rechts(Some(FahrplanNameRechts::builder().fahrplan_name_text("E 60".into()).build()))
+                    .build(),
+            ],
+            mindest_bremshundertstel: 0.,
+        };
+
+        let resolved_route_part = generate_route_part(&env, route_part).unwrap();
+
+        assert_eq!(resolved_route_part, expected);
+
+        assert_eq!(fs::read_to_string(trn_path).unwrap(), TRN);
+        assert_eq!(fs::read_to_string(timetable_path).unwrap(), TIMETABLE);
+        assert_eq!(fs::read_to_string(schedule_path).unwrap(), SCHEDULE);
+    }
+
+    #[test]
+    fn test_generate_route_part_with_buchfahrplan_with_environ_stop_times() {
+        const TRN: &str = r#"
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Zusi>
+                <Info DateiTyp="Zug" Version="A.5" MinVersion="A.1"/>
+                <Zug FahrstrName="Aufgleispunkt -&gt; Hildesheim Hbf F">
+                    <Datei/>
+                    <BuchfahrplanRohDatei Dateiname="00000.timetable.xml"/>
+                    <FahrplanEintrag Ank="2024-06-20 08:39:00" Abf="2024-06-20 08:41:40" Signalvorlauf="180" Betrst="Elze">
+                        <FahrplanSignalEintrag FahrplanSignal="N1"/>
+                    </FahrplanEintrag>
+                    <FahrplanEintrag Abf="2024-06-20 08:45:00" Betrst="Mehle Hp"/>
+                    <FahrplanEintrag Ank="2024-06-20 08:48:00" Abf="2024-06-20 08:48:40" Signalvorlauf="160" Betrst="Osterwald Hp"/>
+                    <FahrplanEintrag Ank="2024-06-20 08:52:10" Abf="2024-06-20 08:52:50" Signalvorlauf="160" Betrst="Voldagsen">
+                        <FahrplanSignalEintrag FahrplanSignal="N2"/>
+                    </FahrplanEintrag>
+                    <FahrzeugVarianten/>
+                </Zug>
+            </Zusi>
+        "#;
+
+        const TIMETABLE: &str = r#"
+            <?xml version="1.0" encoding="utf-8"?>
+            <Zusi>
+                <Info DateiTyp="Buchfahrplan" Version="A.7" MinVersion="A.0" />
+                <Buchfahrplan Gattung="RB" Nummer="21041" kmStart="3.4">
+                    <Datei_fpn/>
+                    <Datei_trn/>
+                    <UTM UTM_WE="566" UTM_NS="5793" UTM_Zone="32" UTM_Zone2="U" />
+                    <FplZeile FplLaufweg="20092.018">
+                        <Fplkm km="32.8757" />
+                        <FplName FplNameText="Elze" />
+                        <FplAnk Ank="2024-06-20 08:39:00" />
+                        <FplAbf Abf="2024-06-20 08:41:40" />
+                    </FplZeile>
+                    <FplZeile FplRglGgl="1" FplLaufweg="24631.027">
+                        <Fplkm km="4.5357" />
+                        <FplName FplNameText="Mehle Hp" />
+                        <FplAbf Abf="2024-06-20 08:45:00" />
+                    </FplZeile>
+                    <FplZeile FplRglGgl="1" FplLaufweg="29134.139">
+                        <Fplkm km="9.0405" />
+                        <FplName FplNameText="Osterwald Hp" />
+                        <FplAnk Ank="2024-06-20 08:48:00" />
+                        <FplAbf Abf="2024-06-20 08:48:40" />
+                    </FplZeile>
+                    <FplZeile FplLaufweg="32883.34">
+                        <Fplkm km="12.7907"/>
+                        <FplName FplNameText="Voldagsen"/>
+                        <FplAnk Ank="2024-06-20 08:52:10"/>
+                        <FplAbf Abf="2024-06-20 08:52:50"/>
+                    </FplZeile>
+                </Buchfahrplan>
+            </Zusi>
+        "#;
+
+        let tmp_dir = tempdir().unwrap();
+
+        let trn_path = tmp_dir.path().join("00000.trn");
+        fs::write(&trn_path, TRN).unwrap();
+
+        let timetable_path = tmp_dir.path().join("00000.timetable.xml");
+        fs::write(&timetable_path, TIMETABLE).unwrap();
+
+        let schedule_path = tmp_dir.path().join("00000.schedule.xml");
+        fs::write(&schedule_path, SCHEDULE).unwrap();
+
+        let env = ZusiEnvironment {
+            data_dir: tmp_dir.path().to_owned(),
+            config_dir: tmp_dir.path().to_owned(),
+        };
+
+        let route_part = RoutePart {
+            source: RoutePartSource::TrainFileByPath { path: trn_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned() },
+            start_fahrzeug_verband_aktion: None,
+            time_fix: Some(RouteTimeFix { fix_type: RouteTimeFixType::StartAbf, value: datetime!(2024-06-20 08:46:40) }),
+            apply_schedule: Some(ApplySchedule {
+                path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
+                first_stop_time: Some(Duration::minutes(3) + Duration::seconds(40)),
+                last_stop_time: Some(Duration::minutes(1)),
+            }),
+        };
+
+        let expected = ResolvedRoutePart {
+            start_data: RouteStartData {
+                aufgleis_fahrstrasse: "Aufgleispunkt -> Hildesheim Hbf F".into(),
+                standort_modus: StandortModus::Automatisch,
+                start_vorschubweg: 0.0,
+                speed_anfang: 0.0,
+                km_start: Some(3.4),
+                gnt_spalte: Some(false),
+                fahrzeug_verband_aktion: None,
+            },
+            fahrplan_eintraege: vec![
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:43:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:46:40)))
+                    .signal_vorlauf(180.)
+                    .betriebsstelle("Elze".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N1".into()).build(),
+                    ])
+                    .build(),
+                FahrplanEintrag::builder()
+                    .abfahrt(Some(datetime!(2024-06-20 08:50:00)))
+                    .betriebsstelle("Mehle Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:53:00)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:53:50)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Osterwald Hp".into())
+                    .build(),
+                FahrplanEintrag::builder()
+                    .ankunft(Some(datetime!(2024-06-20 08:57:20)))
+                    .abfahrt(Some(datetime!(2024-06-20 08:58:20)))
+                    .signal_vorlauf(160.)
+                    .betriebsstelle("Voldagsen".into())
+                    .fahrplan_signal_eintraege(vec![
+                        FahrplanSignalEintrag::builder().fahrplan_signal("N2".into()).build(),
+                    ])
+                    .build(),
+            ],
+            has_time_fix: true,
+            fahrplan_zeilen: vec![
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(20092.018)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(32.8757).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Elze".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:43:00)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:46:40)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_regelgleis_gegengleis(1)
+                    .fahrplan_laufweg(24631.027)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(4.5357).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Mehle Hp".into()).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:50:00)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_regelgleis_gegengleis(1)
+                    .fahrplan_laufweg(29134.139)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(9.0405).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Osterwald Hp".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:53:00)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:53:50)).build()))
+                    .build(),
+                FahrplanZeile::builder()
+                    .fahrplan_laufweg(32883.34)
+                    .fahrplan_km(vec![FahrplanKm::builder().km(12.7907).build()])
+                    .fahrplan_name(Some(FahrplanName::builder().fahrplan_name_text("Voldagsen".into()).build()))
+                    .fahrplan_ankunft(Some(FahrplanAnkunft::builder().ankunft(datetime!(2024-06-20 08:57:20)).build()))
+                    .fahrplan_abfahrt(Some(FahrplanAbfahrt::builder().abfahrt(datetime!(2024-06-20 08:58:20)).build()))
                     .build(),
             ],
             mindest_bremshundertstel: 0.,
