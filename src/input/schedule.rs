@@ -13,16 +13,16 @@ pub struct Schedule {
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ScheduleEntry {
-    #[serde(rename = "@Betriebsstelle")]
+    #[serde(rename = "@betriebsstelle")]
     pub betriebsstelle: String,
 
-    #[serde(rename = "@DrivingTime", with = "duration_format")]
+    #[serde(rename = "@drivingTime", with = "duration_format")]
     pub driving_time: Duration,
 
-    #[serde(rename = "@StopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@stopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
     pub stop_time: Option<Duration>,
 
-    #[serde(rename = "@TimeFix", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@timeFix", default, skip_serializing_if = "Option::is_none")]
     pub time_fix: Option<TimeFix>,
 }
 
@@ -44,11 +44,11 @@ mod tests {
 
     const SERIALIZED_SCHEDULE: &'static str = r#"
         <Schedule>
-            <ScheduleEntry Betriebsstelle="a" DrivingTime="00:00:00" StopTime="00:00:50"/>
-            <ScheduleEntry Betriebsstelle="b" DrivingTime="00:02:40" StopTime="00:00:50"/>
-            <ScheduleEntry Betriebsstelle="b" DrivingTime="00:00:00"/>
-            <ScheduleEntry Betriebsstelle="c" DrivingTime="00:03:10" StopTime="00:00:20" TimeFix="Abf"/>
-            <ScheduleEntry Betriebsstelle="d" DrivingTime="00:02:30" StopTime="00:00:00"/>
+            <ScheduleEntry betriebsstelle="a" drivingTime="00:00:00" stopTime="00:00:50"/>
+            <ScheduleEntry betriebsstelle="b" drivingTime="00:02:40" stopTime="00:00:50"/>
+            <ScheduleEntry betriebsstelle="b" drivingTime="00:00:00"/>
+            <ScheduleEntry betriebsstelle="c" drivingTime="00:03:10" stopTime="00:00:20" timeFix="Abf"/>
+            <ScheduleEntry betriebsstelle="d" drivingTime="00:02:30" stopTime="00:00:00"/>
         </Schedule>
     "#;
 

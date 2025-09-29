@@ -145,10 +145,10 @@ mod tests {
     const SCHEDULE: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
         <Schedule>
-            <ScheduleEntry Betriebsstelle="Elze" DrivingTime="00:02:20" StopTime="00:02:40"/>
-            <ScheduleEntry Betriebsstelle="Mehle Hp" DrivingTime="00:03:20"/>
-            <ScheduleEntry Betriebsstelle="Osterwald Hp" DrivingTime="00:03:00" StopTime="00:00:50"/>
-            <ScheduleEntry Betriebsstelle="Voldagsen" DrivingTime="00:03:30" StopTime="00:00:40"/>
+            <ScheduleEntry betriebsstelle="Elze" drivingTime="00:02:20" stopTime="00:02:40"/>
+            <ScheduleEntry betriebsstelle="Mehle Hp" drivingTime="00:03:20"/>
+            <ScheduleEntry betriebsstelle="Osterwald Hp" drivingTime="00:03:00" stopTime="00:00:50"/>
+            <ScheduleEntry betriebsstelle="Voldagsen" drivingTime="00:03:30" stopTime="00:00:40"/>
         </Schedule>
     "#;
 
