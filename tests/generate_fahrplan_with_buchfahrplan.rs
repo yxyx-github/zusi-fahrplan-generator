@@ -91,9 +91,9 @@ fn test_generate_fahrplan_with_buchfahrplan() {
     cmd.arg("generate-fahrplan").arg("-c").arg(&config_path)
         .assert()
         .stdout(predicates::str::is_match(concat!(
-            r#"^Generate Fahrplan using config file at "/tmp/\.[a-zA-Z0-9]+/data_dir/dev/config.xml"\r?\n"#,
-            r#"Zusi data dir: "/tmp/.[a-zA-Z0-9]+/data_dir"\r?\n"#,
-            r#"Config dir: "/tmp/.[a-zA-Z0-9]+/data_dir/dev"(\r\n|\n)*$"#,
+            r#"^Generate Fahrplan using config file at "/[a-zA-Z0-9\./-_]+/data_dir/dev/config.xml"\r?\n"#,
+            r#"Zusi data dir: "/[a-zA-Z0-9\./-_]+/data_dir"\r?\n"#,
+            r#"Config dir: "/[a-zA-Z0-9\./-_]+/data_dir/dev"(\r\n|\n)*$"#,
         )).unwrap())
         .stderr("")
         .success();

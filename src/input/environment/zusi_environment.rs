@@ -1,11 +1,11 @@
 use crate::core::lib::file_error::{FileError, FileErrorKind};
+use crate::core::lib::helpers::path_to_relative;
 use crate::input::environment::zusi_environment_config::ZusiEnvironmentConfig;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{absolute, Path, PathBuf};
 use zusi_xml_lib::xml::zusi::lib::path::prejoined_zusi_path::PrejoinedZusiPath;
 use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPath;
-use crate::core::lib::helpers::path_to_relative;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ZusiEnvironment {
@@ -84,17 +84,17 @@ impl Display for ZusiEnvironment {
 mod tests {
     use super::*;
     use crate::core::lib::file_error::FileErrorKind;
-    use tempfile::{tempdir, TempDir};
+    use tempfile::tempdir;
     use zusi_xml_lib::xml::zusi::lib::path::zusi_path::ZusiPathError;
 
-    fn dir_path<P: AsRef<Path>>(tmp_dir: &TempDir, path: P) -> PathBuf {
-        let path = tmp_dir.path().join(path);
+    fn dir_path<T: AsRef<Path>, P: AsRef<Path>>(tmp_dir: T, path: P) -> PathBuf {
+        let path = tmp_dir.as_ref().join(path);
         fs::create_dir_all(&path).unwrap();
         path
     }
 
-    fn file_path<P: AsRef<Path>>(tmp_dir: &TempDir, path: P) -> PathBuf {
-        let path = tmp_dir.path().join(path);
+    fn file_path<T: AsRef<Path>, P: AsRef<Path>>(tmp_dir: T, path: P) -> PathBuf {
+        let path = tmp_dir.as_ref().join(path);
 
         fs::create_dir_all(&path.parent().unwrap()).unwrap();
         fs::write(&path, "").unwrap();
@@ -104,6 +104,7 @@ mod tests {
     #[test]
     fn test_from_zusi_environment_config_config_dir_equals_data_dir() {
         let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path().canonicalize().unwrap();
 
         let path_to_dir = dir_path(&tmp_dir, "path/to/dir");
         let path_to_config = file_path(&tmp_dir, "path/to/dir/config.xml");
@@ -123,6 +124,7 @@ mod tests {
     #[test]
     fn test_from_zusi_environment_config_config_dir_inside_data_dir() {
         let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path().canonicalize().unwrap();
 
         let path_to_data_dir = dir_path(&tmp_dir, "path/to/data_dir");
         let path_to_config_dir = dir_path(&tmp_dir, "path/to/data_dir/and/then/config_dir");
@@ -143,6 +145,7 @@ mod tests {
     #[test]
     fn test_from_zusi_environment_config_config_dir_inside_data_dir_relative_data_dir() {
         let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path().canonicalize().unwrap();
 
         let input_path_to_data_dir = PathBuf::from("../../../");
         let path_to_data_dir = dir_path(&tmp_dir, "path/to/data_dir");
@@ -164,6 +167,7 @@ mod tests {
     #[test]
     fn test_from_zusi_environment_config_config_dir_inside_data_dir_relative_config_dir() {
         let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path().canonicalize().unwrap();
 
         let path_to_data_dir = dir_path(&tmp_dir, "path/to/data_dir");
         let path_to_config_dir = dir_path(&tmp_dir, "path/to/data_dir/and/then/config_dir");
@@ -184,6 +188,7 @@ mod tests {
     #[test]
     fn test_from_zusi_environment_config_data_dir_inside_config_dir() {
         let tmp_dir = tempdir().unwrap();
+        let tmp_dir = tmp_dir.path().canonicalize().unwrap();
 
         let path_to_data_dir = dir_path(&tmp_dir, "path/to/config_dir/and/then/data_dir");
         let path_to_config_dir = dir_path(&tmp_dir, "path/to/config_dir");
