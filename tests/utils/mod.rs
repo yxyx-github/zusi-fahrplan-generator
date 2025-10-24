@@ -1,3 +1,6 @@
+#[allow(dead_code)]
+pub mod tmp_dir_helper;
+
 use std::process::Output;
 
 #[allow(dead_code)]
