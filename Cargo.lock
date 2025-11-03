@@ -753,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "zusi-xml-lib"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "path-clean",
  "quick-xml",
