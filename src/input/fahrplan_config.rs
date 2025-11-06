@@ -1,15 +1,15 @@
 pub mod non_default_fahrzeug_verband_aktion;
 
-use serde_helpers::with::duration::duration_option_format;
-use serde_helpers::with::bool_as_int::bool_as_int_format;
+use crate::input::apply_schedule::ApplySchedule;
 use crate::input::copy_delay_config::CopyDelayConfig;
+use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
 use crate::input::rolling_stock_config::RollingStockConfig;
 use serde::{Deserialize, Serialize};
 use serde_helpers::default::IsDefault;
+use serde_helpers::with::bool_as_int::bool_as_int_format;
 use serde_helpers::with::date_time::date_time_format;
 use std::path::PathBuf;
-use time::{Duration, PrimitiveDateTime};
-use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
+use time::PrimitiveDateTime;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename = "Fahrplan")]
@@ -125,19 +125,6 @@ pub struct RouteTimeFix {
 pub enum RouteTimeFixType {
     StartAbf,
     EndAnk,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-pub struct ApplySchedule {
-    #[serde(rename = "@path")]
-    pub path: PathBuf,
-
-    #[serde(rename = "@firstStopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
-    pub first_stop_time: Option<Duration>,
-
-    #[serde(rename = "@lastStopTime", with = "duration_option_format", default, skip_serializing_if = "Option::is_none")]
-    pub last_stop_time: Option<Duration>,
 }
 
 #[cfg(test)]

@@ -59,7 +59,9 @@ pub fn generate_route(env: &ZusiEnvironment, config: RouteConfig) -> Result<Reso
 mod tests {
     use super::*;
     use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
-    use crate::input::fahrplan_config::{ApplySchedule, RoutePart, RouteTimeFix, RouteTimeFixType, StartFahrzeugVerbandAktion};
+    use crate::input::apply_schedule::ApplySchedule;
+    use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
+    use crate::input::fahrplan_config::{RoutePart, RouteTimeFix, RouteTimeFixType, StartFahrzeugVerbandAktion};
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
@@ -75,7 +77,6 @@ mod tests {
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
-    use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
 
     const TRN1: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
