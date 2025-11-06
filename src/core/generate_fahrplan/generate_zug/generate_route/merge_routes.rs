@@ -83,7 +83,7 @@ pub fn merge_routes(mut current: ResolvedRoutePart, mut new: ResolvedRoutePart) 
                 current_last.fahrzeug_verband_aktion_wende_signal = true;
                 current_last.fahrzeug_verband_aktion_wende_signal_abstand = fahrzeug_verband_aktion.wende_signal_abstand;
                 first_new.ankunft = first_new.abfahrt;
-            } else { // TODO: test
+            } else {
                 first_new.fahrzeug_verband_aktion = fahrzeug_verband_aktion.aktion.into();
                 first_new.fahrzeug_verband_aktion_wende_signal = false;
                 first_new.fahrzeug_verband_aktion_wende_signal_abstand = fahrzeug_verband_aktion.wende_signal_abstand;
