@@ -263,6 +263,7 @@ mod tests {
                         path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                         first_stop_time: None,
                         last_stop_time: None,
+                        modifications: vec![],
                     }),
                 },
                 RoutePart {
@@ -498,6 +499,7 @@ mod tests {
                         path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                         first_stop_time: None,
                         last_stop_time: None,
+                        modifications: vec![],
                     }),
                 },
                 RoutePart {

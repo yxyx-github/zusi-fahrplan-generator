@@ -221,6 +221,8 @@ mod tests {
                 path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                 first_stop_time: None,
                 last_stop_time: None,
+                modifications: vec![],
+
             }),
         };
 
@@ -337,6 +339,7 @@ mod tests {
                 path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                 first_stop_time: Some(Duration::minutes(3) + Duration::seconds(40)),
                 last_stop_time: Some(Duration::minutes(1)),
+                modifications: vec![],
             }),
         };
 
@@ -505,6 +508,7 @@ mod tests {
                 path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                 first_stop_time: None,
                 last_stop_time: None,
+                modifications: vec![],
             }),
         };
 
@@ -654,6 +658,7 @@ mod tests {
                 path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                 first_stop_time: Some(Duration::minutes(3) + Duration::seconds(40)),
                 last_stop_time: Some(Duration::minutes(1)),
+                modifications: vec![],
             }),
         };
 
@@ -820,6 +825,7 @@ mod tests {
                 path: schedule_path.clone().strip_prefix(tmp_dir.path()).unwrap().to_owned(),
                 first_stop_time: None,
                 last_stop_time: None,
+                modifications: vec![],
             }),
         };
 

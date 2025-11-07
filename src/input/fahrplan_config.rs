@@ -202,6 +202,7 @@ mod tests {
                                         path: "./path/to/a.schedule.xml".into(),
                                         first_stop_time: None,
                                         last_stop_time: None,
+                                        modifications: vec![],
                                     }),
                                 },
                                 RoutePart {
@@ -216,6 +217,7 @@ mod tests {
                                         path: "./path/to/b.schedule.xml".into(),
                                         first_stop_time: Some(Duration::minutes(4)),
                                         last_stop_time: Some(Duration::minutes(40)),
+                                        modifications: vec![],
                                     }),
                                 },
                                 RoutePart {
