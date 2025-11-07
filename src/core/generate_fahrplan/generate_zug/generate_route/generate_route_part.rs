@@ -1,17 +1,18 @@
-use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::{ResolvedRoutePart, RouteStartData};
+mod retrieve_route_part;
+
+use crate::core::generate_fahrplan::generate_zug::generate_route::generate_route_part::retrieve_route_part::retrieve_route_part;
+use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::ResolvedRoutePart;
 use crate::core::lib::file_error::FileError;
-use crate::core::lib::helpers::{delay_fahrplan_eintraege, override_with_non_default, read_buchfahrplan, read_zug};
+use crate::core::lib::helpers::delay_fahrplan_eintraege;
 use crate::core::schedules::apply::{apply_schedule, ApplyScheduleError};
 use crate::core::schedules::update_buchfahrplan::{update_buchfahrplan, UpdateBuchfahrplanError};
 use crate::input::apply_schedule::ApplySchedule;
 use crate::input::environment::zusi_environment::ZusiEnvironment;
-use crate::input::fahrplan_config::{RoutePart, RoutePartSource, RouteTimeFix, RouteTimeFixType};
+use crate::input::fahrplan_config::{RoutePart, RouteTimeFix, RouteTimeFixType};
 use crate::input::schedule::Schedule;
 use serde_helpers::xml::FromXML;
-use std::path::PathBuf;
 use thiserror::Error;
 use time::Duration;
-use zusi_xml_lib::xml::zusi::lib::datei::Datei;
 use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
 
 #[derive(Error, Debug, Clone, PartialEq)]
@@ -55,10 +56,7 @@ pub enum GenerateRoutePartError {
 }
 
 pub fn generate_route_part(env: &ZusiEnvironment, route_part: RoutePart) -> Result<ResolvedRoutePart, GenerateRoutePartError> {
-    let mut resolved_route_part = match route_part.source {
-        RoutePartSource::TrainFileByPath { ref path } => retrieve_route_part_by_path(env, path),
-        RoutePartSource::TrainConfigByNummer { .. } => todo!(),
-    }?;
+    let mut resolved_route_part = retrieve_route_part(env, route_part.source)?;
     if resolved_route_part.fahrplan_eintraege.is_empty() {
         Err(GenerateRoutePartError::EmptyRoutePart)
     } else {
@@ -106,46 +104,12 @@ fn adjust_environ_stop_times(resolved_route_part: &mut ResolvedRoutePart, first:
     }
 }
 
-fn retrieve_route_part_by_path(env: &ZusiEnvironment, path: &PathBuf) -> Result<ResolvedRoutePart, GenerateRoutePartError> {
-    let path = env.path_to_prejoined_zusi_path(path)
-        .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?;
-    let mut route_template = read_zug(path.full_path())
-        .map_err(|error| GenerateRoutePartError::ReadRouteError { error })?.value;
-
-    let (fahrplan_zeilen, km_start, gnt_spalte) = if let Some(Datei { dateiname, .. }) = route_template.buchfahrplan_roh_datei {
-        let buchfahrplan_path = env.zusi_path_to_prejoined_zusi_path(dateiname);
-        let buchfahrplan_template = read_buchfahrplan(buchfahrplan_path.full_path())
-            .map_err(|error| GenerateRoutePartError::ReadBuchfahrplanError { error })?.value;
-        override_with_non_default(&mut route_template.mindest_bremshundertstel, buchfahrplan_template.mindest_bremshundertstel);
-        (buchfahrplan_template.fahrplan_zeilen, Some(buchfahrplan_template.km_start), Some(buchfahrplan_template.gnt_spalte))
-    } else {
-        (vec![], None, None)
-    };
-
-    Ok(
-        ResolvedRoutePart::new(
-            RouteStartData {
-                aufgleis_fahrstrasse: route_template.fahrstrassen_name,
-                standort_modus: route_template.standort_modus,
-                start_vorschubweg: route_template.start_vorschubweg,
-                speed_anfang: route_template.speed_anfang,
-                km_start,
-                gnt_spalte,
-                fahrzeug_verband_aktion: None,
-            },
-            route_template.fahrplan_eintraege,
-            fahrplan_zeilen,
-            route_template.mindest_bremshundertstel,
-        )
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::core::lib::file_error::FileErrorKind;
     use crate::input::fahrplan_config::non_default_fahrzeug_verband_aktion::NonDefaultFahrzeugVerbandAktion;
-    use crate::input::fahrplan_config::StartFahrzeugVerbandAktion;
+    use crate::input::fahrplan_config::{RoutePartSource, StartFahrzeugVerbandAktion};
     use std::fs;
     use tempfile::tempdir;
     use time::macros::datetime;
@@ -161,6 +125,7 @@ mod tests {
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::fahrplan_signal_eintrag::FahrplanSignalEintrag;
     use zusi_xml_lib::xml::zusi::zug::fahrplan_eintrag::FahrplanEintrag;
     use zusi_xml_lib::xml::zusi::zug::standort_modus::StandortModus;
+    use crate::core::generate_fahrplan::generate_zug::generate_route::resolved_route::RouteStartData;
 
     const SCHEDULE: &str = r#"
         <?xml version="1.0" encoding="UTF-8"?>
